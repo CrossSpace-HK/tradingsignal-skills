@@ -64,5 +64,36 @@ class ReportShape(unittest.TestCase):
                     )
 
 
+    def test_risk_bullet_forbids_invented_position_sizing(self):
+        """A real answer printed "risk 0.5-1% per trade" with no risk budget given.
+
+        That is a convention, not something we computed, and printing it turns a
+        measurement into unauthorised advice. Asserted as the PRESENCE of the
+        prohibition -- asserting the absence of "0.5%" would fail on the very
+        sentence that bans it.
+        """
+        for name, needles in (
+            ("SKILL.md", ("account percentage", "position size", "portfolio size")),
+            ("SKILL.zh-CN.md", ("账户百分比", "仓位大小", "风险预算")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} no longer forbids '{needle}'")
+
+    def test_risk_bullet_is_bound_to_the_levels_chart(self):
+        """The same answer attached a 1h TD9 chart to a support/resistance claim.
+
+        Padding "one chart per bullet" with whatever image is to hand makes the
+        picture contradict the sentence, which is worse than no picture.
+        """
+        for name, needles in (
+            ("SKILL.md", ("levels chart from `get_levels`", "no matching chart")),
+            ("SKILL.zh-CN.md", ("支撑阻力图", "没有对应的图")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} no longer binds the risk chart: {needle}")
+
+
 if __name__ == "__main__":
     unittest.main()

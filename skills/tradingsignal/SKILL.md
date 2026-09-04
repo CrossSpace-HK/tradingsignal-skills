@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.7"
+  version: "0.1.8"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -60,7 +60,14 @@ Lead with the conclusion: one sentence saying what to do, or that there is nothi
 1. **Entry** — the price or the condition that would trigger one.
 2. **Exit** — the target, and the invalidation that ends the idea.
 3. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
-4. **Risk** — the room above and below, taken from `riskReward` in `get_levels`.
+4. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
+
+Two rules on the risk bullet specifically, because real answers have broken both:
+
+- **Never state an account percentage, a position size, or a risk budget** — not "risk 0.5–1% per trade", not any figure of that kind — unless the user has given their portfolio size and their own risk budget in this conversation. Those numbers are a common convention, not something we computed, and printing one turns a measurement into unauthorised advice.
+- **The chart under this bullet must be the levels chart from `get_levels`.** If it is unavailable, say there is no matching chart. Never substitute a TD9, Chan or VCP image to satisfy the one-chart-per-bullet habit: a picture that does not show what the sentence claims is worse than no picture.
+
+That second rule applies to every bullet. Attach the chart that shows the thing being claimed; when there is none, say so rather than reaching for another module's image.
 
 Write it so a reader understands it on first pass. Be precise, not ornamental, and avoid jargon labels such as `regime`, `trigger` or `payoff`.
 
