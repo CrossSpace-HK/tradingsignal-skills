@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.9"
+  version: "0.1.10"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -61,6 +61,10 @@ Lead with the conclusion: one sentence saying what to do, or that there is nothi
 2. **Exit** — the target, and the invalidation that ends the idea.
 3. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
 4. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
+
+Read `riskReward` as a whole, not as a single number. Report the distance both ways in percent AND in price, then weigh the support: `strength` is how much confluence formed it, and `levelsWithin` is how many further levels stack just beneath it. A thick shelf of support is worth more than one lone line at the same price.
+
+**A large ratio usually means price is sitting on support, not that the trade is generous.** When `atLevel` is true, say that price is resting on the level -- often a good entry rather than a defect -- instead of quoting the ratio as if it were an edge.
 
 Two rules on the risk bullet specifically, because real answers have broken both:
 
