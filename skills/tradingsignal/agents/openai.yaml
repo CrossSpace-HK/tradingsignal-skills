@@ -1,0 +1,15 @@
+interface:
+  display_name: "TradingSignal"
+  short_description: "Find and validate chart-backed trading setups"
+  default_prompt: "Use $tradingsignal to find, validate, or plan the clearest technical opportunities with chart evidence."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "tradingsignal"
+      description: "TradingSignal market screening, technical-analysis, levels, and chart tools"
+      transport: "streamable_http"
+      url: "https://tradingsignal.pro/mcp"
+
+policy:
+  allow_implicit_invocation: true

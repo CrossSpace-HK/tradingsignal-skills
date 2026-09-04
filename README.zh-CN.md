@@ -2,22 +2,22 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-一组开源 Agent Skills，用可复用的工作流编排 TradingSignal 的颗粒化市场分析工具。
+一个开源的 TradingSignal 总 Skill，把颗粒化市场分析工具路由到多个按需加载的工作流。只需安装一次，即可用同一个 `$tradingsignal` 入口完成筛选、研究和交易计划。
 
-## 已发布的 Skills
+## 一个 Skill，多种工作流
 
-| Skill | 能做什么 | 相关资料 |
+| 安装一次 | 内含工作流 | 相关资料 |
 | --- | --- | --- |
-| [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/) | 跨周期扫描加密货币、外汇、大宗商品和已支持的期货，筛出最清晰的技术机会，并给出条件式入场计划、失效位、目标、冲突，以及每条关键理由对应的图表。 | [示例提示词](EXAMPLES.md) · [源码](skills/tradingsignal-macro-opportunity/SKILL.md) |
+| [`tradingsignal`](skills/tradingsignal/) | 多市场领头羊、回调重启、反转验证、单标的分析、条件式交易计划，以及风险优先的“无有效机会”审查。总入口只加载当前问题需要的工作流。 | [示例提示词](EXAMPLES.md) · [源码](skills/tradingsignal/SKILL.md) |
 
-这里仅列出已经发布、可以安装的 Skill。以后可以继续在 `skills/` 目录中增加新的 Skill，安装方式不变。
+Agent Skills 不能注册真正嵌套的子 Skill。本仓库采用“一个可发现的总 Skill + 按需加载的 workflow references”，因此用户只安装一次，窄问题也不会加载全部流程。旧的 [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/) 继续保留兼容，但新用户应安装 `tradingsignal`。
 
 ## 连接 MCP 和安装 Skill 是两件事
 
 - **连接并授权 TradingSignal MCP**：让 Agent 可以访问 TradingSignal 的数据和分析工具。不安装 Skill 也能直接使用这些工具，但需要用户自己决定问什么、按什么顺序调用。
 - **安装 Skill**：给 Agent 一套可复用的工作流，由它选择并编排这些工具。这个 Skill 依赖已经授权的 TradingSignal MCP；只安装 Skill 并不会自动获得数据访问权限。
 
-要使用 `tradingsignal-macro-opportunity`，请完成下面两个步骤。
+要使用 `tradingsignal`，请完成下面两个步骤。
 
 ## 第一步：连接并授权 TradingSignal MCP
 
@@ -49,13 +49,13 @@ claude mcp add --scope user --transport http tradingsignal https://tradingsignal
 把下面这句话粘贴到 Codex：
 
 ```text
-$skill-installer Install https://github.com/CrossSpace-HK/tradingsignal-skills/tree/main/skills/tradingsignal-macro-opportunity
+$skill-installer Install https://github.com/CrossSpace-HK/tradingsignal-skills/tree/main/skills/tradingsignal
 ```
 
 检查文件是否已经安装：
 
 ```bash
-ls ~/.codex/skills/tradingsignal-macro-opportunity/SKILL.md
+ls ~/.codex/skills/tradingsignal/SKILL.md
 ```
 
 ### Claude Code
@@ -63,13 +63,13 @@ ls ~/.codex/skills/tradingsignal-macro-opportunity/SKILL.md
 在终端执行：
 
 ```bash
-mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal-macro-opportunity
+mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
 ```
 
 检查文件是否已经安装：
 
 ```bash
-ls ~/.claude/skills/tradingsignal-macro-opportunity/SKILL.md
+ls ~/.claude/skills/tradingsignal/SKILL.md
 ```
 
 ## 第三步：新开会话并使用
@@ -77,7 +77,7 @@ ls ~/.claude/skills/tradingsignal-macro-opportunity/SKILL.md
 安装后新开一个 Codex 或 Claude Code 会话。安装前已经打开的旧会话不会自动看到新增的 Skill。
 
 ```text
-$tradingsignal-macro-opportunity 扫描 crypto、FX 和大宗商品，找出今天最值得关注的 3 个多周期交易机会。先给结论和 action，再给入场条件、失效位、目标、冲突；每条理由都附对应图表链接。
+$tradingsignal 扫描 crypto、FX 和大宗商品，找出今天最值得关注的 3 个多周期交易机会。先给结论和 action，再给入场条件、失效位、目标、冲突；每条理由都附对应图表链接。
 ```
 
 [EXAMPLES.md](EXAMPLES.md) 提供五组中英双语、可直接复制的工作流：多市场领头羊、回调重启、反转候选验证、单标的交易计划，以及重要的“无有效机会”输出。
