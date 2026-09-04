@@ -12,6 +12,17 @@ One open-source TradingSignal agent skill that routes granular market-analysis t
 
 Agent Skills do not register nested child skills. This package uses one discoverable Skill plus on-demand workflow references, so users install only once and narrow requests do not load every workflow. The former [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/) package remains available for backward compatibility, but new installations should use `tradingsignal`.
 
+The six independently maintained workflows are:
+
+1. [Cross-market leaders](skills/tradingsignal/references/cross-market-leaders.md)
+2. [Pullback restart](skills/tradingsignal/references/pullback-restart.md)
+3. [Reversal validation](skills/tradingsignal/references/reversal-validation.md)
+4. [Single-symbol analysis](skills/tradingsignal/references/symbol-analysis.md)
+5. [Conditional trade plan](skills/tradingsignal/references/trade-plan.md)
+6. [No-valid-opportunity review](skills/tradingsignal/references/no-trade-review.md)
+
+Market-wide workflows share one [screening playbook](skills/tradingsignal/references/opportunity-scan.md). Adding a future workflow requires a focused reference plus one routing line in `SKILL.md`; it does not create another installation.
+
 ## MCP connection and Skill installation are different
 
 - **Connect and authorize TradingSignal MCP** to let the agent access TradingSignal data and analysis tools. You can use those tools directly without installing a Skill, but you must decide what to ask and in what order.
@@ -81,6 +92,27 @@ $tradingsignal Scan crypto, FX, and commodities for today's three clearest multi
 ```
 
 See [EXAMPLES.md](EXAMPLES.md) for five bilingual, copy-ready workflows: cross-market leaders, pullback restarts, reversal validation, a single-symbol trading plan, and the important “no valid opportunity” outcome.
+
+## Updates and removal
+
+MCP and Skill updates behave differently:
+
+- **MCP updates are server-side.** Open a new session so the client reconnects and fetches the latest tool definitions. No MCP reinstall is required.
+- **Skill updates are local.** Remove the existing `tradingsignal` directory, reinstall it, and open a new session. Do not extract a new version over the old directory: a workflow removed upstream could otherwise remain locally and still be loaded.
+
+For Codex, remove the exact Skill directory and then rerun the Codex installation prompt above:
+
+```bash
+rm -rf ~/.codex/skills/tradingsignal
+```
+
+For Claude Code, this update command removes only the exact Skill directory before reinstalling it:
+
+```bash
+rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
+```
+
+To uninstall, run only the applicable removal command above and do not reinstall. The MCP connection is separate; removing the Skill does not remove MCP authorization.
 
 ## Decision boundaries
 

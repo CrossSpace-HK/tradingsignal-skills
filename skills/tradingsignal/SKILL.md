@@ -9,9 +9,12 @@ Route the user's request to the narrowest TradingSignal workflow, load only the 
 
 ## Choose the workflow
 
-- Cross-market leaders, fresh strength, pullback restarts, breakout candidates, reversal candidates, or a risk-first scan: read [references/opportunity-scan.md](references/opportunity-scan.md).
-- Deep research on one named symbol, one timeframe, or one technical method: read [references/symbol-analysis.md](references/symbol-analysis.md).
-- Entry zone, trigger, invalidation, targets, risk/reward, or a complete conditional plan: read [references/trade-plan.md](references/trade-plan.md). For a market-wide request, also read the opportunity-scan workflow first.
+- Cross-market leaders or fresh strength: read the shared [market-screening playbook](references/opportunity-scan.md), then [cross-market leaders](references/cross-market-leaders.md).
+- A higher-timeframe trend with a lower-timeframe pullback and restart: read the shared [market-screening playbook](references/opportunity-scan.md), then [pullback restart](references/pullback-restart.md).
+- Reversal candidates or exhaustion: read the shared [market-screening playbook](references/opportunity-scan.md), then [reversal validation](references/reversal-validation.md).
+- Deep research on one named symbol, one timeframe, or one technical method: read [single-symbol analysis](references/symbol-analysis.md).
+- Entry zone, trigger, invalidation, targets, risk/reward, or a complete conditional plan: read [conditional trade plan](references/trade-plan.md). For a market-wide request, first use the relevant screening workflow.
+- A risk-first review, conflicting evidence, or a request to state when nothing qualifies: read the shared [market-screening playbook](references/opportunity-scan.md), then [no-valid-opportunity review](references/no-trade-review.md).
 - If the request mixes these jobs, apply them in order: screen, analyze the shortlist with granular modules, then build plans only for candidates that survive validation.
 
 Do not load every reference for a narrow request.
