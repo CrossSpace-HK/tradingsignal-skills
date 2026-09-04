@@ -61,6 +61,8 @@ $tradingsignal-macro-opportunity Scan crypto, FX, and commodities for today's th
 
 Expected actions are `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`. An entry action is not allowed without a concrete invalidation level. Position sizing requires an explicit portfolio risk budget.
 
+See [EXAMPLES.md](EXAMPLES.md) for bilingual, copy-ready workflows covering cross-market leaders, pullback restarts, reversal validation, a single-symbol trading plan, and the important “no valid opportunity” outcome.
+
 ## License
 
 MIT
