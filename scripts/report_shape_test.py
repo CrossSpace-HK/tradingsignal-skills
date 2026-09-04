@@ -95,5 +95,21 @@ class ReportShape(unittest.TestCase):
                 self.assertIn(needle, text, f"{name} no longer binds the risk chart: {needle}")
 
 
+    def test_prices_must_come_from_the_drawn_set(self):
+        """A report cited 80,407 while its chart drew six other prices.
+
+        The MCP now guarantees riskReward's bounds appear in `drawnLevels`, so
+        the skill can be told to cite only from there instead of computing its
+        own "nearest" level off a list the picture does not match.
+        """
+        for name, needles in (
+            ("SKILL.md", ("drawnLevels", "never compute your own")),
+            ("SKILL.zh-CN.md", ("drawnLevels", "不要自己算")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} no longer binds prices to the drawn set: {needle}")
+
+
 if __name__ == "__main__":
     unittest.main()
