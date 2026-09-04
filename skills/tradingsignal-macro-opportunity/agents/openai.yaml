@@ -1,0 +1,15 @@
+interface:
+  display_name: "TradingSignal Macro Opportunity"
+  short_description: "Find cross-asset setups with chart evidence"
+  default_prompt: "Use $tradingsignal-macro-opportunity to find today's clearest cross-asset technical opportunities and produce conditional plans with chart evidence."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "tradingsignal"
+      description: "TradingSignal market screening, technical-analysis, levels, and chart tools"
+      transport: "streamable_http"
+      url: "https://tradingsignal.pro/mcp"
+
+policy:
+  allow_implicit_invocation: true
