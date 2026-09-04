@@ -28,18 +28,7 @@ Market-wide workflows share one [screening playbook](skills/tradingsignal/refere
 - **TradingSignal MCP** gives the agent access to TradingSignal data and analysis tools. Authorization is still required before the tools can read your account.
 - **The Skill** gives the agent reusable workflows for choosing and orchestrating those tools.
 
-Codex configures these two pieces separately. The Claude Code plugin installs both together, then asks you to authorize its bundled MCP connection.
-
-## Codex: connect and authorize TradingSignal MCP
-
-Run in a terminal:
-
-```bash
-codex mcp add tradingsignal --url https://tradingsignal.pro/mcp
-codex mcp login tradingsignal
-```
-
-For guided setup and connection checks, visit <https://tradingsignal.pro/connect>.
+Both the Codex and Claude Code plugins install these two pieces together. Authorization remains a separate user step because the plugin never contains account credentials.
 
 ## Install the workflow package
 
@@ -50,7 +39,10 @@ Use the Codex plugin marketplace so future updates can be fetched with the offic
 ```bash
 codex plugin marketplace add CrossSpace-HK/tradingsignal-skills
 codex plugin add tradingsignal@tradingsignal
+codex mcp login tradingsignal
 ```
+
+The plugin supplies both the Skill and the `tradingsignal` MCP server definition; do not add a second standalone MCP entry. The login command opens TradingSignal's OAuth flow.
 
 Verify that Codex lists the installed plugin:
 
@@ -76,6 +68,8 @@ Verify installation inside Claude Code:
 ```
 
 The installed list should show `tradingsignal@tradingsignal` as enabled.
+
+For guided setup, a manual MCP-only fallback, and connection checks, visit <https://tradingsignal.pro/connect>.
 
 ## Load and use it
 

@@ -28,18 +28,7 @@ Agent Skills 不能注册真正嵌套的子 Skill。本仓库采用“一个可�
 - **TradingSignal MCP**：让 Agent 可以访问 TradingSignal 的数据和分析工具；工具读取账户前仍需完成授权。
 - **Skill**：给 Agent 一套可复用的工作流，由它选择并编排这些工具。
 
-Codex 分别配置这两部分；Claude Code 插件会一次装好 Skill 和 MCP 定义，随后再授权内置的 MCP 连接。
-
-## Codex：连接并授权 TradingSignal MCP
-
-在终端执行：
-
-```bash
-codex mcp add tradingsignal --url https://tradingsignal.pro/mcp
-codex mcp login tradingsignal
-```
-
-如需图形化引导和连接状态检查，请打开 <https://tradingsignal.pro/connect>。
+Codex 与 Claude Code 的插件都会一次装好 Skill 和 MCP 定义。账户授权仍是独立的用户操作，因为插件本身不包含任何账户凭证。
 
 ## 安装工作流包
 
@@ -50,7 +39,10 @@ codex mcp login tradingsignal
 ```bash
 codex plugin marketplace add CrossSpace-HK/tradingsignal-skills
 codex plugin add tradingsignal@tradingsignal
+codex mcp login tradingsignal
 ```
+
+插件已经同时提供 Skill 与 `tradingsignal` MCP server 定义，请勿再添加第二条 standalone MCP。登录命令会打开 TradingSignal 的 OAuth 授权流程。
 
 检查 Codex 是否列出已安装插件：
 
@@ -76,6 +68,8 @@ codex plugin list --marketplace tradingsignal
 ```
 
 已安装列表中应显示 `tradingsignal@tradingsignal` 且为 enabled。
+
+如需图形化引导、只安装 MCP 的手动备用路径或连接状态检查，请打开 <https://tradingsignal.pro/connect>。
 
 ## 加载并使用
 

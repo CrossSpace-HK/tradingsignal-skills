@@ -99,6 +99,32 @@ class ReleaseScriptTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Plugin package changed; choose a new version", result.stderr)
 
+    def test_codex_manifest_bundles_its_mcp_server(self) -> None:
+        plugin = json.loads(
+            (self.repo / "plugins" / "tradingsignal" / ".codex-plugin" / "plugin.json").read_text()
+        )
+        self.assertEqual(
+            plugin["mcpServers"],
+            {
+                "tradingsignal": {
+                    "type": "http",
+                    "url": "https://tradingsignal.pro/mcp",
+                }
+            },
+        )
+
+    def test_each_host_keeps_the_mcp_shape_it_supports(self) -> None:
+        codex_plugin = json.loads(
+            (self.repo / "plugins" / "tradingsignal" / ".codex-plugin" / "plugin.json").read_text()
+        )
+        claude = json.loads(
+            (self.repo / "plugins" / "tradingsignal" / ".mcp.json").read_text()
+        )
+        codex = codex_plugin["mcpServers"]
+        self.assertIn("tradingsignal", codex)
+        self.assertNotIn("mcpServers", codex)
+        self.assertEqual(claude["mcpServers"]["tradingsignal"], codex["tradingsignal"])
+
 
 if __name__ == "__main__":
     unittest.main()

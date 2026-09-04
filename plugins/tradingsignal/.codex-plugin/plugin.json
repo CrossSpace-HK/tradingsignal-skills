@@ -1,6 +1,6 @@
 {
   "name": "tradingsignal",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Find, validate, and plan chart-backed technical opportunities with TradingSignal.",
   "author": {
     "name": "CrossSpace Hong Kong",
@@ -17,6 +17,12 @@
     "commodities"
   ],
   "skills": "./skills/",
+  "mcpServers": {
+    "tradingsignal": {
+      "type": "http",
+      "url": "https://tradingsignal.pro/mcp"
+    }
+  },
   "interface": {
     "displayName": "TradingSignal",
     "shortDescription": "Find and validate chart-backed trading setups",
