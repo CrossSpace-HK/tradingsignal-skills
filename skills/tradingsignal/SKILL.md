@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.11"
+  version: "0.1.12"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -62,7 +62,7 @@ Lead with the conclusion: one sentence saying what to do, or that there is nothi
 3. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
 4. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
 
-Read `riskReward` as a whole, not as a single number. Report the distance both ways in percent AND in price, then weigh the support: `strength` is how much confluence formed it, and `levelsWithin` is how many further levels stack just beneath it. A thick shelf of support is worth more than one lone line at the same price.
+Read `riskReward` as a whole, not as a single number. Report the distance both ways in percent AND in price, then weigh the support: `strength` is how much confluence formed it, and `levelsWithin` is how many levels hold up that area **including the nearest support itself** -- 1 means a lone line, 3 means it sits on a shelf. Do not describe it as levels *below* the support; that reads one too many. A thick shelf is worth more than one lone line at the same price.
 
 **A large ratio usually means price is sitting on support, not that the trade is generous.** When `atLevel` is true, report that price is resting on the level instead of quoting the ratio as if it were an edge.
 

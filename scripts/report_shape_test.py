@@ -133,5 +133,26 @@ class ReportShape(unittest.TestCase):
         )
 
 
+    def test_levels_within_is_described_as_inclusive(self):
+        """A real report said "4 more levels below" when there were 3.
+
+        `levelsWithin` counts the nearest support itself. Describing it as
+        levels BENEATH that support reads one too many, and this number is the
+        density signal -- the difference between a shelf and a single line.
+        """
+        for name, needle in (
+            ("SKILL.md", "including the nearest support itself"),
+            ("SKILL.zh-CN.md", "含最近这条本身"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+        # The wording that caused it must not return -- checked line by line,
+        # because the file now contains that phrase inside the instruction NOT
+        # to use it. A flat assertNotIn fails on the prohibition itself, which
+        # is a mistake I have now made three times in one session.
+        for line in (SKILL / "SKILL.zh-CN.md").read_text(encoding="utf-8").splitlines():
+            if "下方另有" in line:
+                self.assertIn("不要", line, f"reintroduces the miscount: {line.strip()[:70]}")
+
+
 if __name__ == "__main__":
     unittest.main()
