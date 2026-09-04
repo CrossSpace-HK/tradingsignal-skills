@@ -1,33 +1,50 @@
 # TradingSignal Skills
 
-Open-source agent skills for turning TradingSignal's granular market-analysis tools into repeatable workflows.
+[English](README.md) | [中文](README.zh-CN.md)
 
-## Available skill
+Open-source agent skills that orchestrate TradingSignal's granular market-analysis tools into repeatable workflows.
 
-### `tradingsignal-macro-opportunity`
+## Available skills
 
-Scans crypto, FX, commodities, and supported futures across timeframes, then returns the clearest technical opportunities with conditional entry plans, invalidation levels, targets, conflicts, and a chart for every decision-relevant reason.
+| Skill | What it does | Resources |
+| --- | --- | --- |
+| [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/) | Scans crypto, FX, commodities, and supported futures across timeframes, then returns the clearest technical opportunities with conditional entry plans, invalidation levels, targets, conflicts, and a chart for every decision-relevant reason. | [Example prompts](EXAMPLES.md) · [Source](skills/tradingsignal-macro-opportunity/SKILL.md) |
 
-The skill orchestrates individual TradingSignal MCP modules. It does not treat the all-in-one symbol analysis as the default research path, and it does not use exploratory Fibonacci results as screening evidence or a trading signal.
+Only published, installable skills appear in this list. More skills can be added under `skills/` without changing the installation model.
 
-## Prerequisite: connect TradingSignal MCP
+## MCP connection and Skill installation are different
 
-Codex:
+- **Connect and authorize TradingSignal MCP** to let the agent access TradingSignal data and analysis tools. You can use those tools directly without installing a Skill, but you must decide what to ask and in what order.
+- **Install a Skill** to give the agent a reusable workflow for choosing and orchestrating those tools. This Skill requires an authorized TradingSignal MCP connection; installing it alone does not grant data access.
+
+Complete both steps below to use `tradingsignal-macro-opportunity`.
+
+## Step 1: Connect and authorize TradingSignal MCP
+
+### Codex
+
+Run in a terminal:
 
 ```bash
 codex mcp add tradingsignal --url https://tradingsignal.pro/mcp
 codex mcp login tradingsignal
 ```
 
-Claude Code:
+### Claude Code
+
+Run in a terminal:
 
 ```bash
 claude mcp add --scope user --transport http tradingsignal https://tradingsignal.pro/mcp
 ```
 
-Complete the login flow before using a skill. TradingSignal's setup page is available at <https://tradingsignal.pro/connect>.
+Then open Claude Code, enter `/mcp`, select `tradingsignal`, and choose **Authenticate**.
 
-## Install in Codex
+For guided setup and connection checks, visit <https://tradingsignal.pro/connect>.
+
+## Step 2: Install the Skill
+
+### Codex
 
 Paste this into Codex:
 
@@ -35,33 +52,42 @@ Paste this into Codex:
 $skill-installer Install https://github.com/CrossSpace-HK/tradingsignal-skills/tree/main/skills/tradingsignal-macro-opportunity
 ```
 
-The skill becomes available on the next turn after installation.
+Verify the file exists:
 
-For a manual installation, copy the whole skill directory to:
-
-```text
-~/.codex/skills/tradingsignal-macro-opportunity/
+```bash
+ls ~/.codex/skills/tradingsignal-macro-opportunity/SKILL.md
 ```
 
-## Install in Claude Code
+### Claude Code
 
-Copy the whole skill directory to:
+Run in a terminal:
 
-```text
-~/.claude/skills/tradingsignal-macro-opportunity/
+```bash
+mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal-macro-opportunity
 ```
 
-The required entrypoint is `SKILL.md`. Restart or open a new session after installation.
+Verify the file exists:
 
-## Try it
-
-```text
-$tradingsignal-macro-opportunity Scan crypto, FX, and commodities for today's three clearest multi-timeframe technical opportunities. Lead with the action, then give entry conditions, invalidation, targets, conflicts, and a chart link for every reason. Do not use Fibonacci as strong-resonance evidence.
+```bash
+ls ~/.claude/skills/tradingsignal-macro-opportunity/SKILL.md
 ```
 
-Expected actions are `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`. An entry action is not allowed without a concrete invalidation level. Position sizing requires an explicit portfolio risk budget.
+## Step 3: Open a new session and use it
 
-See [EXAMPLES.md](EXAMPLES.md) for bilingual, copy-ready workflows covering cross-market leaders, pullback restarts, reversal validation, a single-symbol trading plan, and the important “no valid opportunity” outcome.
+Open a new Codex or Claude Code session after installation. A session that was already open before installation will not see the newly added Skill.
+
+```text
+$tradingsignal-macro-opportunity Scan crypto, FX, and commodities for today's three clearest multi-timeframe technical opportunities. Lead with the action, then give entry conditions, invalidation, targets, conflicts, and a chart link for every reason.
+```
+
+See [EXAMPLES.md](EXAMPLES.md) for five bilingual, copy-ready workflows: cross-market leaders, pullback restarts, reversal validation, a single-symbol trading plan, and the important “no valid opportunity” outcome.
+
+## Decision boundaries
+
+- Expected actions are `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`.
+- An entry action is not allowed without a concrete invalidation level.
+- Position sizing requires an explicit portfolio risk budget.
+- Exploratory Fibonacci results are not screening evidence or an independent trading signal.
 
 ## License
 
