@@ -56,6 +56,6 @@ Confirmed, active, recent structure outranks stale or unconfirmed signals. If in
 
 Start by stating whether an executable opportunity exists. Then return at most 1–3 `topActions`, followed by `watchlist`, `avoided`, and `coverageGaps`.
 
-Each candidate must have one of `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`, plus direction, horizon, entry condition, invalidation, targets, estimated risk/reward, expiry, conflicts, caveats, and chart-bound reasons.
+Present every candidate in the report shape defined in SKILL.md -- one action, then entry / exit / where it is / risk -- rather than a structure invented here. The action is one of: enter on a pullback, enter on a breakout, watch, reduce or exit, avoid. Conflicts and caveats go after the four bullets.
 
 When nothing qualifies, say so explicitly and show the closest rejected candidates, why they failed, and what would upgrade them.

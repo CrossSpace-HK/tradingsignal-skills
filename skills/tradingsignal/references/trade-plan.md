@@ -21,40 +21,23 @@ Do not turn a conditional setup into an unconditional forecast. State what must 
 
 ## Response shape
 
-Lead with one action: `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`.
+Use the report shape in SKILL.md. Do not invent a different one here: when this
+file and SKILL.md disagreed, the model followed neither and produced a table.
 
-Then provide:
+Lead with one action -- enter on a pullback, enter on a breakout, watch, reduce
+or exit, or avoid -- in one sentence. Then exactly these four bullets, at most
+two sentences each, with the matching chart immediately after the bullet it
+supports:
 
-```json
-{
-  "symbol": "BTC/USDT",
-  "direction": "LONG",
-  "action": "ENTER_ON_PULLBACK",
-  "horizon": "swing",
-  "conclusion": "Wait for a pullback into the entry zone and renewed 4h strength.",
-  "plan": {
-    "entryZone": [0, 0],
-    "trigger": "...",
-    "invalidation": 0,
-    "targets": [0, 0],
-    "riskReward": 0,
-    "validUntil": "..."
-  },
-  "reasons": [
-    {
-      "claim": "...",
-      "backing": "...",
-      "whyItMatters": "...",
-      "timeframe": "4h",
-      "module": "chan",
-      "evidenceFields": ["..."],
-      "asOf": "...",
-      "chartUrl": "https://...png"
-    }
-  ],
-  "conflicts": [],
-  "caveats": []
-}
-```
+1. **Entry** -- the price zone, or the condition that would trigger one.
+2. **Exit** -- the targets, and the invalidation that ends the idea.
+3. **Where it is** -- which VCP stage, where in the Chan structure, or which
+   independent methods agree, and what each timeframe contributed.
+4. **Risk** -- the room above and below, from `riskReward` in `get_levels`.
+   Never a win rate or a confidence figure; when `riskReward` returns null
+   bounds, say the levels are too close to measure against.
+
+Return JSON only if the user asks for it. The default answer is the four
+bullets, because a person is reading it.
 
 If chart generation fails, keep the structured facts, cap the action at `WATCH`, and disclose the missing visual check.
