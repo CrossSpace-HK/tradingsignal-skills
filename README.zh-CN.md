@@ -8,20 +8,20 @@
 
 | 安装一次 | 内含工作流 | 相关资料 |
 | --- | --- | --- |
-| [`tradingsignal`](skills/tradingsignal/) | 多市场领头羊、回调重启、反转验证、单标的分析、条件式交易计划，以及风险优先的“无有效机会”审查。总入口只加载当前问题需要的工作流。 | [示例提示词](EXAMPLES.md) · [源码](skills/tradingsignal/SKILL.md) |
+| [`tradingsignal`](skills/tradingsignal/SKILL.zh-CN.md) | 多市场领头羊、回调重启、反转验证、单标的分析、条件式交易计划，以及风险优先的“无有效机会”审查。总入口只加载当前问题需要的工作流。 | [示例提示词](EXAMPLES.md) · [中文说明](skills/tradingsignal/SKILL.zh-CN.md) |
 
-Agent Skills 不能注册真正嵌套的子 Skill。本仓库采用“一个可发现的总 Skill + 按需加载的 workflow references”，因此用户只安装一次，窄问题也不会加载全部流程。旧的 [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/) 继续保留兼容，但新用户应安装 `tradingsignal`。
+Agent Skills 不能注册真正嵌套的子 Skill。本仓库采用“一个可发现的总 Skill + 按需加载的 workflow references”，因此用户只安装一次，窄问题也不会加载全部流程。旧的 [`tradingsignal-macro-opportunity`](skills/tradingsignal-macro-opportunity/SKILL.zh-CN.md) 继续保留兼容，但新用户应安装 `tradingsignal`。
 
 当前六个独立维护的工作流是：
 
-1. [多市场领头羊](skills/tradingsignal/references/cross-market-leaders.md)
-2. [回调重启](skills/tradingsignal/references/pullback-restart.md)
-3. [反转验证](skills/tradingsignal/references/reversal-validation.md)
-4. [单标的分析](skills/tradingsignal/references/symbol-analysis.md)
-5. [条件式交易计划](skills/tradingsignal/references/trade-plan.md)
-6. [无有效机会审查](skills/tradingsignal/references/no-trade-review.md)
+1. [多市场领头羊](skills/tradingsignal/references/cross-market-leaders.zh-CN.md)
+2. [回调重启](skills/tradingsignal/references/pullback-restart.zh-CN.md)
+3. [反转验证](skills/tradingsignal/references/reversal-validation.zh-CN.md)
+4. [单标的分析](skills/tradingsignal/references/symbol-analysis.zh-CN.md)
+5. [条件式交易计划](skills/tradingsignal/references/trade-plan.zh-CN.md)
+6. [无有效机会审查](skills/tradingsignal/references/no-trade-review.zh-CN.md)
 
-市场级工作流共用一份[筛选基础流程](skills/tradingsignal/references/opportunity-scan.md)。以后新增 workflow，只需增加一个聚焦的 reference，并在 `SKILL.md` 增加一条路由；不需要让用户再安装一个 Skill。
+市场级工作流共用一份[筛选基础流程](skills/tradingsignal/references/opportunity-scan.zh-CN.md)。以后新增 workflow，只需增加一个聚焦的 reference，并在 `SKILL.md` 增加一条路由；不需要让用户再安装一个 Skill。
 
 ## 连接 MCP 和安装 Skill 是两件事
 
@@ -57,16 +57,17 @@ claude mcp add --scope user --transport http tradingsignal https://tradingsignal
 
 ### Codex
 
-把下面这句话粘贴到 Codex：
-
-```text
-$skill-installer Install https://github.com/CrossSpace-HK/tradingsignal-skills/tree/main/skills/tradingsignal
-```
-
-检查文件是否已经安装：
+使用 Codex plugin marketplace 安装；以后可以通过官方升级命令获取更新：
 
 ```bash
-ls ~/.codex/skills/tradingsignal/SKILL.md
+codex plugin marketplace add CrossSpace-HK/tradingsignal-skills
+codex plugin add tradingsignal@tradingsignal
+```
+
+检查 Codex 是否列出已安装插件：
+
+```bash
+codex plugin list --marketplace tradingsignal
 ```
 
 ### Claude Code
@@ -98,12 +99,12 @@ $tradingsignal 扫描 crypto、FX 和大宗商品，找出今天最值得关注�
 MCP 和 Skill 的更新机制不同：
 
 - **MCP 在服务端更新。** 新开一个会话，让客户端重新连接并取得最新工具定义；不需要重新安装 MCP。
-- **Skill 是本地文件。** 更新时应先删除已有的 `tradingsignal` 目录，再重新安装并新开会话。不要直接覆盖解压：如果新版删除了某个 workflow，覆盖安装会让旧文件继续残留并可能被加载。
+- **Skill 是本地文件。** Codex 可以用官方 plugin 命令刷新 Git marketplace；Claude Code 仍需清理后重装。两边更新后都应新开会话。
 
-Codex 请先删除准确的 Skill 目录，再重新执行上面的 Codex 安装提示词：
+Codex 请刷新已经配置的 marketplace：
 
 ```bash
-rm -rf ~/.codex/skills/tradingsignal
+codex plugin marketplace upgrade tradingsignal
 ```
 
 Claude Code 可以用下面这条更新命令；它只删除准确的 Skill 目录，然后重新安装：
@@ -112,7 +113,7 @@ Claude Code 可以用下面这条更新命令；它只删除准确的 Skill 目�
 rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
 ```
 
-如需卸载，只执行对应的删除命令，不要重新安装。MCP 连接与 Skill 相互独立；删除 Skill 不会删除 MCP 授权。
+Codex 用 `codex plugin remove tradingsignal@tradingsignal` 卸载。Claude Code 只执行准确目录的删除命令，不要重新安装。MCP 连接与 Skill 相互独立；删除 Skill 不会删除 MCP 授权。
 
 ## 决策边界
 

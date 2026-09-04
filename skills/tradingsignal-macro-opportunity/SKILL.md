@@ -3,6 +3,8 @@ name: tradingsignal-macro-opportunity
 description: Use TradingSignal MCP to scan crypto, FX, commodities, and supported futures for cross-asset technical opportunities, then turn the strongest candidates into chart-backed entry, invalidation, and target plans. Use for multi-market opportunity discovery and multi-timeframe technical planning; not for macro news research, order execution, or position sizing without an explicit risk budget.
 ---
 
+[English](SKILL.md) | [中文](SKILL.zh-CN.md)
+
 # TradingSignal Macro Opportunity
 
 Act as a systematic technical-opportunity desk for a macro hedge fund manager. Find a small number of setups worth acting on or watching, explain why, and make every reason visually auditable.

@@ -1,0 +1,20 @@
+{
+  "name": "tradingsignal",
+  "interface": {
+    "displayName": "TradingSignal"
+  },
+  "plugins": [
+    {
+      "name": "tradingsignal",
+      "source": {
+        "source": "local",
+        "path": "./plugins/tradingsignal"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "tradingsignal",
+  "version": "0.1.0",
+  "description": "Find, validate, and plan chart-backed technical opportunities with TradingSignal.",
+  "author": {
+    "name": "CrossSpace Hong Kong",
+    "url": "https://github.com/CrossSpace-HK"
+  },
+  "homepage": "https://tradingsignal.pro/connect",
+  "repository": "https://github.com/CrossSpace-HK/tradingsignal-skills",
+  "license": "MIT",
+  "keywords": ["trading", "technical analysis", "crypto", "forex", "commodities"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "TradingSignal",
+    "shortDescription": "Find and validate chart-backed trading setups",
+    "longDescription": "Use TradingSignal to scan markets, research individual symbols with granular technical methods, and build conditional trade plans with explicit invalidation and chart evidence.",
+    "developerName": "CrossSpace Hong Kong",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read"],
+    "websiteURL": "https://tradingsignal.pro/",
+    "defaultPrompt": [
+      "Scan markets for today's clearest technical opportunities.",
+      "Build a chart-backed trade plan for this symbol.",
+      "Check whether any valid setup qualifies today."
+    ]
+  }
+}

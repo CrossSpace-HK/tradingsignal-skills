@@ -57,16 +57,17 @@ For guided setup and connection checks, visit <https://tradingsignal.pro/connect
 
 ### Codex
 
-Paste this into Codex:
-
-```text
-$skill-installer Install https://github.com/CrossSpace-HK/tradingsignal-skills/tree/main/skills/tradingsignal
-```
-
-Verify the file exists:
+Use the Codex plugin marketplace so future updates can be fetched with the official upgrade command:
 
 ```bash
-ls ~/.codex/skills/tradingsignal/SKILL.md
+codex plugin marketplace add CrossSpace-HK/tradingsignal-skills
+codex plugin add tradingsignal@tradingsignal
+```
+
+Verify that Codex lists the installed plugin:
+
+```bash
+codex plugin list --marketplace tradingsignal
 ```
 
 ### Claude Code
@@ -98,12 +99,12 @@ See [EXAMPLES.md](EXAMPLES.md) for five bilingual, copy-ready workflows: cross-m
 MCP and Skill updates behave differently:
 
 - **MCP updates are server-side.** Open a new session so the client reconnects and fetches the latest tool definitions. No MCP reinstall is required.
-- **Skill updates are local.** Remove the existing `tradingsignal` directory, reinstall it, and open a new session. Do not extract a new version over the old directory: a workflow removed upstream could otherwise remain locally and still be loaded.
+- **Skill updates are local.** Codex can refresh the Git marketplace snapshot with its official plugin command. Claude Code still needs a clean reinstall. Open a new session after either update.
 
-For Codex, remove the exact Skill directory and then rerun the Codex installation prompt above:
+For Codex, refresh the configured marketplace:
 
 ```bash
-rm -rf ~/.codex/skills/tradingsignal
+codex plugin marketplace upgrade tradingsignal
 ```
 
 For Claude Code, this update command removes only the exact Skill directory before reinstalling it:
@@ -112,7 +113,7 @@ For Claude Code, this update command removes only the exact Skill directory befo
 rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
 ```
 
-To uninstall, run only the applicable removal command above and do not reinstall. The MCP connection is separate; removing the Skill does not remove MCP authorization.
+For Codex, uninstall with `codex plugin remove tradingsignal@tradingsignal`. For Claude Code, run only the exact-directory removal command above and do not reinstall. The MCP connection is separate; removing the Skill does not remove MCP authorization.
 
 ## Decision boundaries
 
