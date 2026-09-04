@@ -23,16 +23,14 @@ Agent Skills 不能注册真正嵌套的子 Skill。本仓库采用“一个可�
 
 市场级工作流共用一份[筛选基础流程](skills/tradingsignal/references/opportunity-scan.zh-CN.md)。以后新增 workflow，只需增加一个聚焦的 reference，并在 `SKILL.md` 增加一条路由；不需要让用户再安装一个 Skill。
 
-## 连接 MCP 和安装 Skill 是两件事
+## MCP 数据访问和 Skill 工作流是两件事
 
-- **连接并授权 TradingSignal MCP**：让 Agent 可以访问 TradingSignal 的数据和分析工具。不安装 Skill 也能直接使用这些工具，但需要用户自己决定问什么、按什么顺序调用。
-- **安装 Skill**：给 Agent 一套可复用的工作流，由它选择并编排这些工具。这个 Skill 依赖已经授权的 TradingSignal MCP；只安装 Skill 并不会自动获得数据访问权限。
+- **TradingSignal MCP**：让 Agent 可以访问 TradingSignal 的数据和分析工具；工具读取账户前仍需完成授权。
+- **Skill**：给 Agent 一套可复用的工作流，由它选择并编排这些工具。
 
-要使用 `tradingsignal`，请完成下面两个步骤。
+Codex 分别配置这两部分；Claude Code 插件会一次装好 Skill 和 MCP 定义，随后再授权内置的 MCP 连接。
 
-## 第一步：连接并授权 TradingSignal MCP
-
-### Codex
+## Codex：连接并授权 TradingSignal MCP
 
 在终端执行：
 
@@ -41,19 +39,9 @@ codex mcp add tradingsignal --url https://tradingsignal.pro/mcp
 codex mcp login tradingsignal
 ```
 
-### Claude Code
-
-在终端执行：
-
-```bash
-claude mcp add --scope user --transport http tradingsignal https://tradingsignal.pro/mcp
-```
-
-然后打开 Claude Code，输入 `/mcp`，选择 `tradingsignal`，再选择 **Authenticate**。
-
 如需图形化引导和连接状态检查，请打开 <https://tradingsignal.pro/connect>。
 
-## 第二步：安装 Skill
+## 安装工作流包
 
 ### Codex
 
@@ -72,24 +60,35 @@ codex plugin list --marketplace tradingsignal
 
 ### Claude Code
 
-在终端执行：
+在 Claude Code 内添加本仓库 marketplace 并安装插件：
 
 ```bash
-mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
+/plugin marketplace add CrossSpace-HK/tradingsignal-skills
+/plugin install tradingsignal@tradingsignal
 ```
 
-检查文件是否已经安装：
+插件同时包含 Skill 和 TradingSignal MCP 定义。若 Claude 提示重启，可新开会话，也可执行 `/reload-plugins`。随后输入 `/mcp`，选择插件提供的 `tradingsignal` server，再选择 **Authenticate**。
+
+在 Claude Code 内检查安装状态：
 
 ```bash
-ls ~/.claude/skills/tradingsignal/SKILL.md
+/plugin
 ```
 
-## 第三步：新开会话并使用
+已安装列表中应显示 `tradingsignal@tradingsignal` 且为 enabled。
 
-安装后新开一个 Codex 或 Claude Code 会话。安装前已经打开的旧会话不会自动看到新增的 Skill。
+## 加载并使用
+
+Codex 安装后请新开会话。Claude Code 可以在当前会话执行 `/reload-plugins` 加载新插件，也可以重启。
 
 ```text
 $tradingsignal 扫描 crypto、FX 和大宗商品，找出今天最值得关注的 3 个多周期交易机会。先给结论和 action，再给入场条件、失效位、目标、冲突；每条理由都附对应图表链接。
+```
+
+Claude Code 使用带插件命名空间的命令：
+
+```text
+/tradingsignal:tradingsignal 扫描 crypto、FX 和大宗商品，找出今天最值得关注的 3 个多周期交易机会。先给结论和 action，再给入场条件、失效位、目标、冲突；每条理由都附对应图表链接。
 ```
 
 [EXAMPLES.md](EXAMPLES.md) 提供五组中英双语、可直接复制的工作流：多市场领头羊、回调重启、反转候选验证、单标的交易计划，以及重要的“无有效机会”输出。
@@ -98,8 +97,8 @@ $tradingsignal 扫描 crypto、FX 和大宗商品，找出今天最值得关注�
 
 MCP 和 Skill 的更新机制不同：
 
-- **MCP 在服务端更新。** 新开一个会话，让客户端重新连接并取得最新工具定义；不需要重新安装 MCP。
-- **Skill 是本地文件。** Codex 可以用官方 plugin 命令刷新 Git marketplace；Claude Code 仍需清理后重装。两边更新后都应新开会话。
+- **TradingSignal 服务实现由服务端更新。** 重连或新开会话即可取得变化后的工具定义，不需要重装 MCP。
+- **插件和 Skill 文件在本地更新。** Codex 与 Claude Code 都可以用官方 plugin 命令刷新本 Git marketplace。
 
 Codex 请刷新已经配置的 marketplace：
 
@@ -107,17 +106,18 @@ Codex 请刷新已经配置的 marketplace：
 codex plugin marketplace upgrade tradingsignal
 ```
 
-Claude Code 可以用下面这条更新命令；它只删除准确的 Skill 目录，然后重新安装：
+Claude Code 先刷新 marketplace 元数据，再更新已安装插件：
 
 ```bash
-rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
+claude plugin marketplace update tradingsignal
+claude plugin update tradingsignal@tradingsignal
 ```
 
-Codex 用 `codex plugin remove tradingsignal@tradingsignal` 卸载。Claude Code 只执行准确目录的删除命令，不要重新安装。MCP 连接与 Skill 相互独立；删除 Skill 不会删除 MCP 授权。
+Codex 用 `codex plugin remove tradingsignal@tradingsignal` 卸载。Claude Code 用 `claude plugin uninstall tradingsignal@tradingsignal` 卸载。删除插件不会自动撤销 TradingSignal 授权；如需撤销，请到 TradingSignal 连接页面操作。
 
 ## 发布 Skill 版本
 
-维护者必须通过 `python3 scripts/release.py --set <version>` 发布。脚本会同步源 Skill、插件内副本和插件清单，再把内容摘要写入 `release.json`。CI 会运行 `python3 scripts/release.py --check`，因此 Skill 内容变化但发布版本记录未更新时无法通过。
+维护者必须通过 `python3 scripts/release.py --set <version>` 发布。脚本会同步源 Skill、插件内副本以及 Codex/Claude 两份插件清单，再把 Skill 和完整插件包摘要写入 `release.json`。CI 会运行 `python3 scripts/release.py --check`，因此 Skill 或插件内容变化但发布版本记录未更新时无法通过。
 
 ## 决策边界
 

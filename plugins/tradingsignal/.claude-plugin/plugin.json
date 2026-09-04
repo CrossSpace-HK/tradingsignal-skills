@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "tradingsignal",
+  "version": "0.1.4",
+  "description": "Find, validate, and plan chart-backed technical opportunities with TradingSignal.",
+  "author": {
+    "name": "CrossSpace Hong Kong",
+    "url": "https://github.com/CrossSpace-HK"
+  },
+  "homepage": "https://tradingsignal.pro/connect",
+  "repository": "https://github.com/CrossSpace-HK/tradingsignal-skills",
+  "license": "MIT",
+  "keywords": [
+    "trading",
+    "technical-analysis",
+    "crypto",
+    "forex",
+    "commodities"
+  ],
+  "skills": "./skills/"
+}

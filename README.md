@@ -23,16 +23,14 @@ The six independently maintained workflows are:
 
 Market-wide workflows share one [screening playbook](skills/tradingsignal/references/opportunity-scan.md). Adding a future workflow requires a focused reference plus one routing line in `SKILL.md`; it does not create another installation.
 
-## MCP connection and Skill installation are different
+## MCP access and Skill instructions are different
 
-- **Connect and authorize TradingSignal MCP** to let the agent access TradingSignal data and analysis tools. You can use those tools directly without installing a Skill, but you must decide what to ask and in what order.
-- **Install a Skill** to give the agent a reusable workflow for choosing and orchestrating those tools. This Skill requires an authorized TradingSignal MCP connection; installing it alone does not grant data access.
+- **TradingSignal MCP** gives the agent access to TradingSignal data and analysis tools. Authorization is still required before the tools can read your account.
+- **The Skill** gives the agent reusable workflows for choosing and orchestrating those tools.
 
-Complete both steps below to use `tradingsignal`.
+Codex configures these two pieces separately. The Claude Code plugin installs both together, then asks you to authorize its bundled MCP connection.
 
-## Step 1: Connect and authorize TradingSignal MCP
-
-### Codex
+## Codex: connect and authorize TradingSignal MCP
 
 Run in a terminal:
 
@@ -41,19 +39,9 @@ codex mcp add tradingsignal --url https://tradingsignal.pro/mcp
 codex mcp login tradingsignal
 ```
 
-### Claude Code
-
-Run in a terminal:
-
-```bash
-claude mcp add --scope user --transport http tradingsignal https://tradingsignal.pro/mcp
-```
-
-Then open Claude Code, enter `/mcp`, select `tradingsignal`, and choose **Authenticate**.
-
 For guided setup and connection checks, visit <https://tradingsignal.pro/connect>.
 
-## Step 2: Install the Skill
+## Install the workflow package
 
 ### Codex
 
@@ -72,24 +60,35 @@ codex plugin list --marketplace tradingsignal
 
 ### Claude Code
 
-Run in a terminal:
+Inside Claude Code, add this repository as a marketplace and install the plugin:
 
 ```bash
-mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
+/plugin marketplace add CrossSpace-HK/tradingsignal-skills
+/plugin install tradingsignal@tradingsignal
 ```
 
-Verify the file exists:
+The plugin contains both the Skill and the TradingSignal MCP definition. If Claude asks for a restart, either start a new session or run `/reload-plugins`. Then enter `/mcp`, select the plugin-provided `tradingsignal` server, and choose **Authenticate**.
+
+Verify installation inside Claude Code:
 
 ```bash
-ls ~/.claude/skills/tradingsignal/SKILL.md
+/plugin
 ```
 
-## Step 3: Open a new session and use it
+The installed list should show `tradingsignal@tradingsignal` as enabled.
 
-Open a new Codex or Claude Code session after installation. A session that was already open before installation will not see the newly added Skill.
+## Load and use it
+
+Open a new Codex session after installation. Claude Code can load a newly installed plugin in the current session with `/reload-plugins`; restarting also works.
 
 ```text
 $tradingsignal Scan crypto, FX, and commodities for today's three clearest multi-timeframe technical opportunities. Lead with the action, then give entry conditions, invalidation, targets, conflicts, and a chart link for every reason.
+```
+
+In Claude Code, use the plugin-namespaced command instead:
+
+```text
+/tradingsignal:tradingsignal Scan crypto, FX, and commodities for today's three clearest multi-timeframe technical opportunities. Lead with the action, then give entry conditions, invalidation, targets, conflicts, and a chart link for every reason.
 ```
 
 See [EXAMPLES.md](EXAMPLES.md) for five bilingual, copy-ready workflows: cross-market leaders, pullback restarts, reversal validation, a single-symbol trading plan, and the important “no valid opportunity” outcome.
@@ -98,8 +97,8 @@ See [EXAMPLES.md](EXAMPLES.md) for five bilingual, copy-ready workflows: cross-m
 
 MCP and Skill updates behave differently:
 
-- **MCP updates are server-side.** Open a new session so the client reconnects and fetches the latest tool definitions. No MCP reinstall is required.
-- **Skill updates are local.** Codex can refresh the Git marketplace snapshot with its official plugin command. Claude Code still needs a clean reinstall. Open a new session after either update.
+- **TradingSignal's server implementation updates server-side.** Reconnect or start a new session to fetch changed tool definitions; no MCP reinstall is required.
+- **Plugin and Skill files update locally.** Both Codex and Claude Code can refresh this Git marketplace with official plugin commands.
 
 For Codex, refresh the configured marketplace:
 
@@ -107,17 +106,18 @@ For Codex, refresh the configured marketplace:
 codex plugin marketplace upgrade tradingsignal
 ```
 
-For Claude Code, this update command removes only the exact Skill directory before reinstalling it:
+For Claude Code, refresh the marketplace metadata and update the installed plugin:
 
 ```bash
-rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL https://github.com/CrossSpace-HK/tradingsignal-skills/archive/refs/heads/main.tar.gz | tar -xz -C ~/.claude/skills --strip-components=2 tradingsignal-skills-main/skills/tradingsignal
+claude plugin marketplace update tradingsignal
+claude plugin update tradingsignal@tradingsignal
 ```
 
-For Codex, uninstall with `codex plugin remove tradingsignal@tradingsignal`. For Claude Code, run only the exact-directory removal command above and do not reinstall. The MCP connection is separate; removing the Skill does not remove MCP authorization.
+For Codex, uninstall with `codex plugin remove tradingsignal@tradingsignal`. For Claude Code, use `claude plugin uninstall tradingsignal@tradingsignal`. Removing a plugin does not revoke the TradingSignal authorization itself; revoke it from the TradingSignal connection page if needed.
 
 ## Publishing a Skill release
 
-Maintainers must publish through `python3 scripts/release.py --set <version>`. It synchronizes the source Skill, packaged plugin copy, and plugin manifest, then records a content digest in `release.json`. CI runs `python3 scripts/release.py --check`, so changed Skill content cannot pass with an unchanged release record.
+Maintainers must publish through `python3 scripts/release.py --set <version>`. It synchronizes the source Skill, packaged plugin copy, and both Codex and Claude plugin manifests, then records Skill and whole-package digests in `release.json`. CI runs `python3 scripts/release.py --check`, so changed Skill or plugin content cannot pass with an unchanged release record.
 
 ## Decision boundaries
 

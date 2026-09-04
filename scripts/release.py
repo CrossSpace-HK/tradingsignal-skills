@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "skills" / "tradingsignal"
 PLUGIN_SKILL = ROOT / "plugins" / "tradingsignal" / "skills" / "tradingsignal"
 PLUGIN_MANIFEST = ROOT / "plugins" / "tradingsignal" / ".codex-plugin" / "plugin.json"
+CLAUDE_PLUGIN_MANIFEST = ROOT / "plugins" / "tradingsignal" / ".claude-plugin" / "plugin.json"
 RELEASE_MANIFEST = ROOT / "release.json"
 SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 VERSION_LINE = re.compile(r'(?m)^([ \t]*version:[ \t]*)["\']?([^"\'\s]+)["\']?[ \t]*$')
@@ -71,8 +72,13 @@ def set_release(version: str) -> None:
 
     if RELEASE_MANIFEST.exists():
         previous = json.loads(RELEASE_MANIFEST.read_text(encoding="utf-8"))
-        if previous.get("version") == version and previous.get("skillDigest") != tree_digest(SOURCE):
-            raise ValueError("Skill content changed; choose a new version instead of reusing the published one")
+        if previous.get("version") == version:
+            if previous.get("skillDigest") != tree_digest(SOURCE):
+                raise ValueError("Skill content changed; choose a new version instead of reusing the published one")
+            if "packageDigest" in previous and previous.get("packageDigest") != tree_digest(
+                ROOT / "plugins" / "tradingsignal"
+            ):
+                raise ValueError("Plugin package changed; choose a new version instead of reusing the published one")
 
     set_skill_version(SOURCE / "SKILL.md", version)
     if PLUGIN_SKILL.exists():
@@ -82,19 +88,29 @@ def set_release(version: str) -> None:
     plugin = json.loads(PLUGIN_MANIFEST.read_text(encoding="utf-8"))
     plugin["version"] = version
     write_json(PLUGIN_MANIFEST, plugin)
+    claude_plugin = json.loads(CLAUDE_PLUGIN_MANIFEST.read_text(encoding="utf-8"))
+    claude_plugin["version"] = version
+    write_json(CLAUDE_PLUGIN_MANIFEST, claude_plugin)
     write_json(
         RELEASE_MANIFEST,
-        {"name": "tradingsignal", "version": version, "skillDigest": tree_digest(SOURCE)},
+        {
+            "name": "tradingsignal",
+            "version": version,
+            "skillDigest": tree_digest(SOURCE),
+            "packageDigest": tree_digest(ROOT / "plugins" / "tradingsignal"),
+        },
     )
 
 
 def check_release() -> None:
     plugin = json.loads(PLUGIN_MANIFEST.read_text(encoding="utf-8"))
+    claude_plugin = json.loads(CLAUDE_PLUGIN_MANIFEST.read_text(encoding="utf-8"))
     release = json.loads(RELEASE_MANIFEST.read_text(encoding="utf-8"))
     versions = {
         "source Skill": skill_version(SOURCE / "SKILL.md"),
         "plugin Skill": skill_version(PLUGIN_SKILL / "SKILL.md"),
         "plugin manifest": plugin.get("version"),
+        "Claude plugin manifest": claude_plugin.get("version"),
         "release manifest": release.get("version"),
     }
     if len(set(versions.values())) != 1:
@@ -107,6 +123,9 @@ def check_release() -> None:
     actual_digest = tree_digest(SOURCE)
     if release.get("skillDigest") != actual_digest:
         raise ValueError("Skill content changed without a release version bump")
+    actual_package_digest = tree_digest(ROOT / "plugins" / "tradingsignal")
+    if release.get("packageDigest") != actual_package_digest:
+        raise ValueError("Plugin package changed without a release version bump")
 
 
 def main() -> int:

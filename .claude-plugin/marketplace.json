@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "tradingsignal",
+  "description": "TradingSignal market-analysis workflows and MCP tools for Claude Code.",
+  "owner": {
+    "name": "CrossSpace Hong Kong"
+  },
+  "plugins": [
+    {
+      "name": "tradingsignal",
+      "source": "./plugins/tradingsignal",
+      "description": "Find, validate, and plan chart-backed technical opportunities with TradingSignal.",
+      "category": "productivity",
+      "homepage": "https://tradingsignal.pro/connect"
+    }
+  ]
+}

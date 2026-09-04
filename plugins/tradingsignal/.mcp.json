@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tradingsignal": {
+      "type": "http",
+      "url": "https://tradingsignal.pro/mcp"
+    }
+  }
+}

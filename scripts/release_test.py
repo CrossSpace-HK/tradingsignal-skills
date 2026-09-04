@@ -70,13 +70,34 @@ class ReleaseScriptTest(unittest.TestCase):
         plugin = json.loads(
             (self.repo / "plugins" / "tradingsignal" / ".codex-plugin" / "plugin.json").read_text()
         )
+        claude_plugin = json.loads(
+            (self.repo / "plugins" / "tradingsignal" / ".claude-plugin" / "plugin.json").read_text()
+        )
         release = json.loads((self.repo / "release.json").read_text())
         self.assertEqual(plugin["version"], self.next_version)
+        self.assertEqual(claude_plugin["version"], self.next_version)
         self.assertEqual(release["version"], self.next_version)
+        self.assertIn("packageDigest", release)
         self.assertIn(
             f'version: "{self.next_version}"',
             (self.repo / "skills" / "tradingsignal" / "SKILL.md").read_text(),
         )
+
+    def test_changed_plugin_package_fails_digest_check(self) -> None:
+        mcp = self.repo / "plugins" / "tradingsignal" / ".mcp.json"
+        with mcp.open("a", encoding="utf-8") as file:
+            file.write("\n")
+        result = self.run_release("--check")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Plugin package changed without a release version bump", result.stderr)
+
+    def test_changed_plugin_package_cannot_reuse_version(self) -> None:
+        mcp = self.repo / "plugins" / "tradingsignal" / ".mcp.json"
+        with mcp.open("a", encoding="utf-8") as file:
+            file.write("\n")
+        result = self.run_release("--set", self.version)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Plugin package changed; choose a new version", result.stderr)
 
 
 if __name__ == "__main__":
