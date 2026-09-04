@@ -18,6 +18,15 @@
 
 窄问题不要加载全部 reference。
 
+## Skill 版本检查
+
+把英文运行时入口 frontmatter 中的 `metadata.version` 视为当前安装的 Skill 版本。仓库发布脚本会强制它与 Codex 插件清单保持一致。
+
+- 必须调用的 `describe_capabilities` 可能返回 `skillRelease`；不要为了检查更新额外调用一次工具。
+- 按合法语义版本比较。仅当 `skillRelease.version` 严格高于 `metadata.version` 时，在市场分析结尾提示一次更新。
+- 有更新时，按当前客户端给出 `skillRelease.update` 中对应的命令；客户端不明确时应分别标注两条命令，不得猜测。
+- 版本相同、服务端版本更旧、任一字段缺失或格式无效时保持静默。版本检查不得阻断用户请求的分析。
+
 ## 共同规则
 
 - 先用 `describe_capabilities` 确认市场、标的、周期、数据新鲜度和筛选池覆盖。

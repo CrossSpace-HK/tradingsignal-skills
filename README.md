@@ -115,6 +115,10 @@ rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL
 
 For Codex, uninstall with `codex plugin remove tradingsignal@tradingsignal`. For Claude Code, run only the exact-directory removal command above and do not reinstall. The MCP connection is separate; removing the Skill does not remove MCP authorization.
 
+## Publishing a Skill release
+
+Maintainers must publish through `python3 scripts/release.py --set <version>`. It synchronizes the source Skill, packaged plugin copy, and plugin manifest, then records a content digest in `release.json`. CI runs `python3 scripts/release.py --check`, so changed Skill content cannot pass with an unchanged release record.
+
 ## Decision boundaries
 
 - Expected actions are `ENTER_ON_PULLBACK`, `ENTER_ON_BREAKOUT`, `WATCH`, `REDUCE_OR_EXIT`, or `AVOID`.

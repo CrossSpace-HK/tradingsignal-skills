@@ -1,6 +1,8 @@
 ---
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
+metadata:
+  version: "0.1.2"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -20,6 +22,15 @@ Route the user's request to the narrowest TradingSignal workflow, load only the 
 - If the request mixes these jobs, apply them in order: screen, analyze the shortlist with granular modules, then build plans only for candidates that survive validation.
 
 Do not load every reference for a narrow request.
+
+## Skill release check
+
+Treat the frontmatter `metadata.version` as the installed Skill release. The repository release script keeps it synchronized with the Codex plugin manifest.
+
+- The required `describe_capabilities` call may include `skillRelease`. Do not make an extra tool call only to check for updates.
+- Compare valid semantic versions. Mention an update once, after the market answer, only when `skillRelease.version` is strictly newer than `metadata.version`.
+- When an update is available, give the command from `skillRelease.update` for the active client. If the client is unknown, label both client commands instead of guessing.
+- Say nothing about updates when the versions match, the published version is older, or either field is absent or invalid. An update check must never block the requested analysis.
 
 ## Shared rules
 

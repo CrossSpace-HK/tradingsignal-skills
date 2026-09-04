@@ -115,6 +115,10 @@ rm -rf ~/.claude/skills/tradingsignal && mkdir -p ~/.claude/skills && curl -fsSL
 
 Codex 用 `codex plugin remove tradingsignal@tradingsignal` 卸载。Claude Code 只执行准确目录的删除命令，不要重新安装。MCP 连接与 Skill 相互独立；删除 Skill 不会删除 MCP 授权。
 
+## 发布 Skill 版本
+
+维护者必须通过 `python3 scripts/release.py --set <version>` 发布。脚本会同步源 Skill、插件内副本和插件清单，再把内容摘要写入 `release.json`。CI 会运行 `python3 scripts/release.py --check`，因此 Skill 内容变化但发布版本记录未更新时无法通过。
+
 ## 决策边界
 
 - 可返回的 action 包括 `ENTER_ON_PULLBACK`、`ENTER_ON_BREAKOUT`、`WATCH`、`REDUCE_OR_EXIT` 和 `AVOID`。
