@@ -15,7 +15,7 @@ Use granular method outputs and `get_levels` to select the nearest defensible:
 - estimated risk/reward;
 - expiry or event that makes the plan stale.
 
-Higher timeframes define regime and major invalidation; lower timeframes refine timing. Reject the setup when data are stale, methods materially conflict, invalidation is ambiguous, or the next support/resistance leaves inadequate payoff.
+Higher timeframes set the backdrop and the major invalidation; lower timeframes refine timing. Reject the setup when data are stale, methods materially conflict, invalidation is ambiguous, or there is too little room to the next support or resistance.
 
 Do not turn a conditional setup into an unconditional forecast. State what must happen before entry and what would prove the thesis wrong. Do not provide position size unless the user supplies portfolio size and a risk budget.
 

@@ -19,13 +19,15 @@ Search for:
 - `near_cost` for strong instruments pulling back instead of requiring a chase;
 - `div_bull`, `div_bear`, `td_buy`, `td_sell`, `chan_buy`, and `wyckoff_accum` for reversal or exhaustion watchlists.
 
-Rank each candidate on three separately reported dimensions:
+Judge each candidate on three things, and report them separately:
 
-1. `regime`: higher-timeframe stage, trend, moving-average position, and leadership within its own market cohort;
-2. `trigger`: fresh resonance, breakout, Chan point, TD9 maturity, Wyckoff event, or divergence;
-3. `payoff`: distance from entry to invalidation and from entry to the next defensible target.
+1. **Where it stands** — higher-timeframe stage, trend, position against its moving averages, and how it ranks inside its own market cohort;
+2. **What just happened** — fresh resonance, a breakout, a Chan point, TD9 maturity, a Wyckoff event, or a divergence;
+3. **Room either way** — distance from entry to invalidation, and from entry to the next defensible target.
 
-Do not describe this ranking as a win probability unless a calibrated model supplies one.
+Write these in plain words. Do not label them `regime`, `trigger` or `payoff`: those are jargon to the person reading the report.
+
+Never present this as a win probability. There is no backtest behind these engines, so a percentage would be invented.
 
 ## 3. Recognize valid multi-timeframe structures
 

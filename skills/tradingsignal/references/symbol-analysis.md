@@ -23,8 +23,8 @@ Do not treat the combined overview or two outputs from one engine as independent
 
 Lead with the symbol-level conclusion and current decision state. Then explain:
 
-1. higher-timeframe regime;
-2. current structure and trigger state;
+1. where the higher timeframes stand;
+2. the current structure, and what has just triggered;
 3. nearest support, resistance, and invalidation candidates;
 4. agreement and conflicts across independent methods;
 5. what the next bar or price event must do to confirm or reject the reading.

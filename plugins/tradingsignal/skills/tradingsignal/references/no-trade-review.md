@@ -10,7 +10,7 @@ Reject or downgrade a candidate when any of these is decision-critical:
 
 - stale or incomplete data;
 - unsupported market, symbol, or timeframe coverage;
-- material conflict between higher-timeframe regime and the proposed trigger;
+- the higher timeframes and the proposed entry point in material conflict;
 - only one oscillator or one evidence family supports the thesis;
 - missing or ambiguous invalidation;
 - inadequate risk/reward to the next defensible level;

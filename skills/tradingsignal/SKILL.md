@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.5"
+  version: "0.1.6"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -37,7 +37,7 @@ Treat the frontmatter `metadata.version` as the installed Skill release. The rep
 - Use `describe_capabilities` before assuming market, symbol, timeframe, freshness, or cohort coverage.
 - Use the narrowest granular MCP tool that answers the question. Treat `analyze_symbol` as an optional quick overview, not the default research path or independent confirmation.
 - Preserve `notApplicable` and “not computable” as distinct from neutral and from “no signal.”
-- Higher timeframes define regime; lower timeframes refine entries. Do not average away a deliberate `1d trend -> 4h pullback -> 1h restart` structure.
+- Higher timeframes set the backdrop; lower timeframes refine entries. Do not average away a deliberate `1d trend -> 4h pullback -> 1h restart` structure.
 - Never compare relative-strength percentiles from different market cohorts as absolute cross-market scores.
 - Never substitute a spot series for a futures ticker or silently splice data providers.
 - FX has no consolidated volume. Do not support an FX action with volume-derived claims unless the response supplies a valid, labelled proxy.
@@ -52,3 +52,16 @@ For every decision-relevant reason, return the claim, backing, why it matters, t
 Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, or `vcp`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
 
 Keep the answer conclusion-first. State explicitly when no setup qualifies; never manufacture actions to fill a list.
+
+## Report shape
+
+Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, with the matching chart immediately after the bullet it supports:
+
+1. **Entry** — the price or the condition that would trigger one.
+2. **Exit** — the target, and the invalidation that ends the idea.
+3. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
+4. **Risk** — the room above and below, taken from `riskReward` in `get_levels`.
+
+Write it so a reader understands it on first pass. Be precise, not ornamental, and avoid jargon labels such as `regime`, `trigger` or `payoff`.
+
+**Never state a win rate, a confidence interval, or any probability of success.** These engines are rule-based and there is no backtest behind them, so such a number would be invented. `riskReward` measures distance to real levels and is not a probability: a ratio of 2 means twice the room, never a 2-in-3 chance. When `riskReward` returns null bounds, say the levels are too close to measure against rather than filling in a figure.
