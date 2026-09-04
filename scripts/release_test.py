@@ -19,6 +19,9 @@ class ReleaseScriptTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.repo = Path(self.temp.name) / "repo"
         shutil.copytree(ROOT, self.repo, ignore=shutil.ignore_patterns(".git"))
+        self.version = json.loads((self.repo / "release.json").read_text())["version"]
+        major, minor, patch = map(int, self.version.split("."))
+        self.next_version = f"{major}.{minor}.{patch + 1}"
 
     def tearDown(self) -> None:
         self.temp.cleanup()
@@ -54,7 +57,7 @@ class ReleaseScriptTest(unittest.TestCase):
         source = self.repo / "skills" / "tradingsignal" / "references" / "opportunity-scan.md"
         with source.open("a", encoding="utf-8") as file:
             file.write("\nrelease mutation\n")
-        result = self.run_release("--set", "0.1.2")
+        result = self.run_release("--set", self.version)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("choose a new version", result.stderr)
 
@@ -62,16 +65,16 @@ class ReleaseScriptTest(unittest.TestCase):
         source = self.repo / "skills" / "tradingsignal" / "references" / "opportunity-scan.md"
         with source.open("a", encoding="utf-8") as file:
             file.write("\nrelease mutation\n")
-        self.assertEqual(self.run_release("--set", "0.1.3").returncode, 0)
+        self.assertEqual(self.run_release("--set", self.next_version).returncode, 0)
         self.assertEqual(self.run_release("--check").returncode, 0)
         plugin = json.loads(
             (self.repo / "plugins" / "tradingsignal" / ".codex-plugin" / "plugin.json").read_text()
         )
         release = json.loads((self.repo / "release.json").read_text())
-        self.assertEqual(plugin["version"], "0.1.3")
-        self.assertEqual(release["version"], "0.1.3")
+        self.assertEqual(plugin["version"], self.next_version)
+        self.assertEqual(release["version"], self.next_version)
         self.assertIn(
-            'version: "0.1.3"',
+            f'version: "{self.next_version}"',
             (self.repo / "skills" / "tradingsignal" / "SKILL.md").read_text(),
         )
 
