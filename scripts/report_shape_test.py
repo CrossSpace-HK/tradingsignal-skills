@@ -111,5 +111,27 @@ class ReportShape(unittest.TestCase):
                 self.assertIn(needle, text, f"{name} no longer binds prices to the drawn set: {needle}")
 
 
+    def test_at_level_is_not_treated_as_a_buy_signal(self):
+        """`atLevel` says price is NEAR a level. It does not say the level holds.
+
+        @QA-CEA: price sitting on a weak support about to break looks identical
+        in this field, so wording it as "often a good entry" reads a failing
+        setup as a positive one. Leon's point stands -- a small downside is not
+        automatically a defect -- but it is not automatically an opportunity.
+        """
+        for name, needles in (
+            ("SKILL.md", ("observation, never a verdict", "not automatically an opportunity")),
+            ("SKILL.zh-CN.md", ("是一个观察，不是结论", "也不自动等于机会")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} treats atLevel as sufficient: {needle}")
+        # And the earlier over-claim must not come back.
+        self.assertNotIn(
+            "往往是好的入场位置",
+            (SKILL / "SKILL.zh-CN.md").read_text(encoding="utf-8"),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
