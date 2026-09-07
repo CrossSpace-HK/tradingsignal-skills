@@ -78,6 +78,11 @@ SLOT_TAB = {
 TF_WORDS = re.compile(r"\b(1m|5m|15m|30m|1h|2h|4h|1d|1w|1mo)\b|(\d+)\s*小时|日线|周线|月线")
 TF_ZH = {"日线": "1d", "周线": "1w", "月线": "1mo"}
 
+# The engines whose methodology the vault keeps. `get_methodology(topic=…)`
+# returns each one verbatim; the vault stores what it returned, not a
+# paraphrase, because analyses cite these notes as the definition they used.
+METHOD_TOPICS = ("vcp", "chan", "td9", "wyckoff", "levels", "fib")
+
 MARKET_FOR_CLASS = {
     "equity_us": "stock", "equity_intl": "stock", "crypto": "crypto",
     "fx": "forex", "commodity_spot": "commodity", "commodity_future": "commodity",
@@ -180,6 +185,52 @@ def dataview_columns(text: str) -> list[str]:
                 if field and not field.startswith('"'):
                     cols.append(field)
     return cols
+
+
+def packaged_skill_version() -> str | None:
+    """This checker ships INSIDE the skill, so it can read its own release.
+
+    That is what makes "is the methodology current?" answerable offline: the
+    version beside the script is the version whose methodology the vault
+    should be holding.
+    """
+    skill = Path(__file__).resolve().parent.parent / "SKILL.md"
+    if not skill.exists():
+        return None
+    m = re.search(r"^\s*version:\s*[\"']?([0-9]+\.[0-9]+\.[0-9]+)", skill.read_text(encoding="utf-8"), re.M)
+    return m.group(1) if m else None
+
+
+def check_methods(vault: Path) -> list[str]:
+    """`方法/` holds the methodology, pinned to the release that produced it.
+
+    A note with no version cannot be told apart from a current one, and a
+    stale note silently redefines what an old analysis meant by "VCP".
+    An ABSENT 方法/ directory is not an error -- a vault gains it the first
+    time methodology is downloaded.
+    """
+    problems: list[str] = []
+    d = vault / "方法"
+    if not d.is_dir():
+        return problems
+    current = packaged_skill_version()
+    for note in sorted(d.glob("*.md")):
+        # A directory README explains the directory; it is not a synced
+        # topic note and has no release to be current with.
+        if note.stem.upper() == "README":
+            continue
+        text = note.read_text(encoding="utf-8")
+        topic = frontmatter_value(text, "topic")
+        version = frontmatter_value(text, "skill_version")
+        if not topic:
+            problems.append(f"方法/{note.name}: no `topic`; the note cannot be matched to a get_methodology topic")
+        elif topic not in METHOD_TOPICS:
+            problems.append(f"方法/{note.name}: topic `{topic}` is not one the skill serves ({', '.join(METHOD_TOPICS)})")
+        if not version:
+            problems.append(f"方法/{note.name}: no `skill_version`; a methodology note that cannot say which release wrote it cannot be told from a current one")
+        elif current and version != current:
+            problems.append(f"方法/{note.name}: written by skill {version}, the installed skill is {current}; re-download this topic")
+    return problems
 
 
 def check(vault: Path) -> list[str]:
@@ -389,6 +440,7 @@ def check(vault: Path) -> list[str]:
                 )
         if page.parent.name == "标的" and "## 历史分析" in text and "[[分析/" not in text:
             problems.append(f"标的/{page.name}: no plain-Markdown history link; without the optional Dataview plugin the history section is blank")
+    problems.extend(check_methods(vault))
     return problems
 
 

@@ -92,6 +92,29 @@ procedure is numbered and none of its steps is optional or reorderable:
    report **"未完整保存"** and say which part -- never tell the user the
    analysis is in Obsidian when it half is.
 
+## `方法/` — the methodology, synced to the release that wrote it
+
+The vault keeps the skill's own method notes so a review can read what "VCP"
+or "TD9" MEANT when an analysis was made, not what it means today. Sync them
+whenever you write to the vault:
+
+1. Read the installed release from this skill's `metadata.version`.
+2. For each topic in `vcp, chan, td9, wyckoff, levels, fib`, look at
+   `方法/<TOPIC>.md`. If it is missing, or its `skill_version` is not the
+   installed release, call `get_methodology(topic=<topic>)` and rewrite it.
+   Unchanged topics are left alone -- a rewrite with identical text still
+   churns the file's history for nothing.
+3. Store what the tool RETURNED, verbatim. Do not paraphrase, summarise or
+   "improve" it: analyses cite these notes as the definition they used, and
+   an edited definition makes every citation to it false.
+4. Front matter carries `topic`, `skill_version`, `updated`, and
+   `source: get_methodology`. A note that cannot say which release wrote it
+   cannot be told apart from a current one -- which is the whole failure this
+   sync exists to prevent.
+
+The check ships with this skill and reads its own release, so "is the
+methodology current?" is answerable without a network call.
+
 ## What goes in the front matter
 
 Machine-readable fields carry the review queries, so they must be facts, not prose:

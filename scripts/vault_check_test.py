@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "tradingsignal" / "scripts"))
-from vault_check import check
+from vault_check import check, check_methods
 
 ANALYSIS = """---
 analysis_id: aaaaaa
@@ -406,6 +406,52 @@ class VaultCheckPostcondition(unittest.TestCase):
         self.note()
         (self.dir / "标签.md").unlink()
         self.assertTrue(any("no 标签.md" in p for p in check(self.dir)))
+
+
+
+class VaultCheckMethodology(unittest.TestCase):
+    """`方法/` is a synced copy, so it must say which release wrote it."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        for d in ("分析", "标的", "附件", "_模板", "方法"):
+            (self.dir / d).mkdir()
+        (self.dir / "_模板" / "分析.md").write_text(TEMPLATE, encoding="utf-8")
+        (self.dir / "标签.md").write_text(TAGS_PAGE, encoding="utf-8")
+        from vault_check import packaged_skill_version
+        self.version = packaged_skill_version()
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def note(self, name, topic, version):
+        (self.dir / "方法" / name).write_text(
+            f"---\ntopic: {topic}\nskill_version: {version}\n---\n\nverbatim methodology text\n", encoding="utf-8")
+
+    def test_a_current_methodology_note_passes(self):
+        self.note("VCP.md", "vcp", self.version)
+        self.assertEqual(check_methods(self.dir), [])
+
+    def test_a_note_from_an_older_release_is_reported_as_stale(self):
+        # The Owner's ask: check the version every time, update when newer.
+        self.note("VCP.md", "vcp", "0.0.1")
+        self.assertTrue(any("re-download this topic" in p for p in check_methods(self.dir)))
+
+    def test_a_note_that_cannot_say_its_version_fails(self):
+        (self.dir / "方法" / "VCP.md").write_text("---\ntopic: vcp\n---\n\ntext\n", encoding="utf-8")
+        self.assertTrue(any("no `skill_version`" in p for p in check_methods(self.dir)))
+
+    def test_a_topic_the_skill_does_not_serve_fails(self):
+        self.note("Astrology.md", "astrology", self.version)
+        self.assertTrue(any("is not one the skill serves" in p for p in check_methods(self.dir)))
+
+    def test_a_directory_README_is_not_a_topic_note(self):
+        (self.dir / "方法" / "README.md").write_text("# 方法\n\nthis layer is synced\n", encoding="utf-8")
+        self.assertEqual(check_methods(self.dir), [])
+
+    def test_a_vault_with_no_methods_directory_is_not_an_error(self):
+        shutil.rmtree(self.dir / "方法")
+        self.assertEqual(check_methods(self.dir), [])
 
 
 if __name__ == "__main__":
