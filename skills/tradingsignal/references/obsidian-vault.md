@@ -60,6 +60,12 @@ procedure is numbered and none of its steps is optional or reorderable:
    reads beside the sentence it proves. A note whose
    evidence is a bare URL is a note nobody can read at a glance -- which is
    the whole reason the vault exists.
+   **The nearest `## ` heading above an image must NAME that image's method**,
+   in either language -- `## VCP 形态`, `## TD9 序列`, `## DeMark 计数`,
+   `## 趋势`, `## 指标`. A heading that names no method (`## 结论`, `## 总结`)
+   is NOT a home for a chart, and neither is no heading at all: the checker
+   fails both closed. "Avoid the links section" was the old rule and it let
+   a TD9 chart sit anywhere that was not `## VCP`.
    Archiving is REQUIRED, not an option: a save the user asked for owes at
    least one real analysis chart -- archived, hash-verified, embedded, with
    its method link directly beneath. Each image's link must match THAT
@@ -165,7 +171,7 @@ the body AND carries a text link beneath it. Applying the chat rule to a note
 produces a wall of URLs; applying the note rule to a chat produces broken
 placeholders. Decide by surface, every time.
 
-Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256.
+Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256. **Every image the body embeds must be declared in `image_sha256s` under its own slot** — the declaration is what binds those bytes to this note, so an embed nobody declared is a picture with no provenance and fails. It must also be this analysis's own file: the name starts with this note's `analysis_id`, never another note's.
 
 Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; its contract is LIVE and exact: `https://tradingsignal.pro/app?market=<market>&symbol=<url-encoded symbol>&timeframe=<tf>&tab=<tab>`, where `tab` is one of `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` and the method decides it (VCP → `vcp`, TD/DeMark → `td9`, Chan → `chan`, Wyckoff → `wyckoff`, support/resistance → `levels`). A link missing any of market, symbol, timeframe or tab is not a deep link, it is a guess. Complete-but-wrong is worse: the checker also requires the link to open THIS note's instrument -- same symbol, same market, and the note's own decision timeframe or one it declares in `context_timeframes` -- and requires the tab to be the method the link TEXT promises and a method this analysis actually ran. A link that passes a shape check and shows the reader a different chart is the failure this exists to prevent.
 

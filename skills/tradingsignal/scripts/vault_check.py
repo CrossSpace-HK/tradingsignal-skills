@@ -21,6 +21,7 @@ Usage: vault_check.py <vault-path>   (exit 0 clean, 1 problems, 2 not a vault)
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -60,6 +61,17 @@ METHOD_WORDS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bWyckoff\b|威科夫", re.I), "wyckoff"),
     (re.compile(r"支撑阻力|\blevels?\b|\bsupport\b", re.I), "levels"),
     (re.compile(r"斐波那契|\bfibonacci\b|\bfib\b", re.I), "fib"),
+]
+
+# What a SECTION heading may name. The method words above plus the two
+# product tabs that are not "methods" in prose but are slots an image can
+# use. Kept separate from METHOD_WORDS on purpose: METHOD_WORDS judges LINK
+# TEXT, where "趋势" is an ordinary word that would start matching sentences
+# it has no business matching. A heading is short and deliberate, so a wider
+# vocabulary is safe there and nowhere else.
+SECTION_WORDS: list[tuple[re.Pattern[str], str]] = METHOD_WORDS + [
+    (re.compile(r"\btrend\b|趋势", re.I), "trend"),
+    (re.compile(r"\bindicators?\b|指标", re.I), "indicators"),
 ]
 
 # Which markets each asset class may name, so a link cannot open the right
@@ -204,6 +216,67 @@ def packaged_skill_version() -> str | None:
     return m.group(1) if m else None
 
 
+def methodology_index(vault: Path) -> tuple[dict, str | None]:
+    """`方法/版本索引.json`, or the reason it cannot be used.
+
+    An unreadable index is NOT the same as an absent one. Absent means the
+    vault has never synced and nothing can be expected of it; unreadable
+    means every analysis has lost the definition it was made under, and
+    quietly returning {} would report that as "fine".
+    """
+    f = vault / "方法" / "版本索引.json"
+    if not f.exists():
+        return {}, None
+    try:
+        idx = json.loads(f.read_text(encoding="utf-8"))
+    except ValueError as e:
+        return {}, f"方法/版本索引.json is not valid JSON ({e}); no analysis can resolve the definition it used"
+    if not isinstance(idx, dict) or any(not isinstance(v, dict) for v in idx.values()):
+        return {}, "方法/版本索引.json is not a map of topic -> release -> file; nothing can be resolved through it"
+    return idx, None
+
+
+def resolve_definition(vault: Path, idx: dict, topic: str, version: str) -> tuple[Path | None, str | None]:
+    """Which file holds what `version` meant by `topic`, and is it REAL?
+
+    QA's finding: an entry is not a definition. `{"td9": {"0.1.30": "TD9.md"}}`
+    with no TD9.md on disk read as clean, so "the version resolves" was a
+    statement about the index agreeing with itself. Every step below is a way
+    that agreement can be true while the definition is unreachable.
+    """
+    entries = idx.get(topic)
+    if not isinstance(entries, dict) or not entries:
+        return None, f"the methodology index has no entry for `{topic}` at all"
+    target = entries.get(version)
+    if not isinstance(target, str) or not target:
+        return None, f"the methodology index has no entry for `{topic}` at {version}"
+    root = (vault / "方法").resolve()
+    rp = (vault / "方法" / target).resolve()
+    # A path may only name a file the vault owns. Without this an entry could
+    # point anywhere on the machine and still "resolve".
+    if rp != root and root not in rp.parents:
+        return None, f"`{topic}` at {version} maps to {target}, which is outside 方法/"
+    if not rp.is_file():
+        return None, f"`{topic}` at {version} maps to {target}, which does not exist"
+    text = rp.read_text(encoding="utf-8")
+    got_topic = frontmatter_value(text, "topic")
+    if got_topic != topic:
+        return None, f"`{topic}` at {version} maps to {target}, which declares topic `{got_topic or 'none'}`"
+    own = frontmatter_value(text, "skill_version")
+    if not own:
+        return None, f"`{topic}` at {version} maps to {target}, which does not say which release wrote it"
+    # The file's OWN release must map to the same file. A release whose text
+    # never changed shares a file with later releases, so equality with
+    # `version` would be wrong -- but a file whose own release points
+    # somewhere else means the index and the vault have diverged.
+    if entries.get(own) != target:
+        return None, (
+            f"`{topic}` at {version} maps to {target}, whose own release {own} maps to "
+            f"{entries.get(own) or 'nothing'}; the index disagrees with the file it points at"
+        )
+    return rp, None
+
+
 def check_methods(vault: Path) -> list[str]:
     """`方法/` holds the methodology, pinned to the release that produced it.
 
@@ -247,6 +320,20 @@ def check_methods(vault: Path) -> list[str]:
             problems.append(f"方法/{note.name}: no `skill_version`; a methodology note that cannot say which release wrote it cannot be told from a current one")
         elif current and version != current:
             problems.append(f"方法/{note.name}: written by skill {version}, the installed skill is {current}; re-download this topic")
+
+    # The index is checked as a whole, not only where an analysis happens to
+    # use it. A broken entry is broken the moment it is written; waiting for
+    # an analysis to trip over it means the vault reports clean right up
+    # until the review that needed it.
+    idx, unusable = methodology_index(vault)
+    if unusable:
+        problems.append(unusable)
+    else:
+        for topic in sorted(idx):
+            for version in sorted(idx[topic]):
+                _, why = resolve_definition(vault, idx, topic, version)
+                if why:
+                    problems.append(f"方法/版本索引.json: {why}")
     return problems
 
 
@@ -329,12 +416,16 @@ def check(vault: Path) -> list[str]:
         note_version = frontmatter_value(text, "skill_version")
         idx_file = vault / "方法" / "版本索引.json"
         if note_version and note_version != "null" and idx_file.exists():
-            import json as _json
-            idx = _json.loads(idx_file.read_text(encoding="utf-8"))
-            for topic in sorted(note_methods):
-                if topic in idx and note_version not in idx[topic]:
+            idx, _unusable = methodology_index(vault)
+            # An index this note's topics are simply MISSING from is the
+            # same failure as one that names the wrong file: either way the
+            # definition cannot be selected. The old rule skipped a missing
+            # topic entirely, so an empty index cleared every analysis.
+            for topic in sorted(note_methods & set(METHOD_TOPICS)):
+                _, why = resolve_definition(vault, idx, topic, note_version)
+                if why:
                     problems.append(
-                        f"分析/{note.name}: skill_version {note_version} has no entry for `{topic}`;"
+                        f"分析/{note.name}: skill_version {note_version} — {why};"
                         f" this analysis cannot be read against the definition it used"
                     )
 
@@ -403,14 +494,34 @@ def check(vault: Path) -> list[str]:
             # go looking for is not evidence in a note.
             embedded = {m for m in EMBED.findall(text)}
             declared_files = {f"{aid}-{slot}.png" for slot in declared_hashes(text) if slot != "image_sha256"}
-            for name in sorted(files):
-                if name in declared_files and name not in embedded:
-                    problems.append(f"分析/{note.name}: 附件/{name} is declared and archived but never embedded; an Obsidian note shows its evidence")
-                elif name not in declared_files and name not in embedded:
+            # The union, not `files`. Iterating the vault's files answered
+            # "is every archived image shown?" and never "is every shown
+            # image archived?" -- so a real PNG embedded in the body without
+            # a hash declaration passed, and its bytes were never checked
+            # against anything (QA's counterexample).
+            for name in sorted(set(files) | embedded):
+                path = vault / "附件" / name
+                if not path.is_file():
+                    problems.append(f"分析/{note.name}: the body embeds 附件/{name}, which is not in the vault")
+                    continue
+                if not name.startswith(f"{aid}-"):
+                    problems.append(
+                        f"分析/{note.name}: the body embeds 附件/{name}, which does not belong to this analysis ({aid});"
+                        f" a note shows its OWN hash-declared evidence"
+                    )
+                    continue
+                if name not in declared_files and name not in embedded:
                     # Neither declared nor shown: a leftover from an earlier
                     # save. Named rather than deleted -- this vault is not
                     # versioned, so removing evidence is not mine to do.
                     problems.append(f"分析/{note.name}: 附件/{name} is in the vault but this note neither declares nor embeds it; declare it or remove it")
+                elif name not in declared_files:
+                    problems.append(
+                        f"分析/{note.name}: 附件/{name} is embedded but declares no SHA-256 in image_sha256s;"
+                        f" an image nobody hashed is a picture with no provenance"
+                    )
+                elif name not in embedded:
+                    problems.append(f"分析/{note.name}: 附件/{name} is declared and archived but never embedded; an Obsidian note shows its evidence")
             lines = text.splitlines()
             # Where does the links section start? Images belong with the
             # reason they support; a picture filed under 链接 is a picture
@@ -423,29 +534,12 @@ def check(vault: Path) -> list[str]:
                 if i > link_section:
                     problems.append(f"分析/{note.name}: {m.group(1)} is embedded under 链接; an image belongs at the reason it supports, not pooled with the links")
                     continue
-                # The nearest heading above it IS the reason it supports. If
-                # that heading names a method, it must be this image's own:
-                # "not under 链接" was satisfied by every other section, so a
-                # TD9 chart could sit under `## VCP` and pass (QA's case).
-                head = next((lines[j] for j in range(i, -1, -1) if lines[j].startswith("## ")), "")
-                head_method = next((tab for pat, tab in METHOD_WORDS if pat.search(head)), None)
-                img_method = SLOT_TAB.get(m.group(1).rsplit("-", 1)[-1].removesuffix(".png"))
-                if head_method and img_method and head_method != img_method:
-                    problems.append(
-                        f"分析/{note.name}: {m.group(1)} draws {img_method} but sits under `{head.strip()}`;"
-                        f" an image belongs in the section that reasons about it"
-                    )
-                    continue
                 slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
-                near = " ".join(lines[i + 1:i + 4])
-                links = [u or b for _, u, b in APP_LINK.findall(near)]
-                if not links:
-                    problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
-                    continue
-                q = parse_qs(urlparse(links[0]).query)
                 # What method does THIS image draw? From the closed slot map,
                 # or -- for a slot the map does not name, `main` included --
                 # from an explicit `primary_method`. No binding, no pass.
+                # Resolved BEFORE the section check so a bound `main` image is
+                # held to its section too, which it previously escaped.
                 want_tab = SLOT_TAB.get(slot)
                 if want_tab is None:
                     want_tab = frontmatter_value(text, "primary_method")
@@ -458,6 +552,41 @@ def check(vault: Path) -> list[str]:
                     if want_tab not in APP_TABS:
                         problems.append(f"分析/{note.name}: primary_method `{want_tab}` is not a tab the product has")
                         continue
+
+                # The nearest heading above it IS the reason it supports, and
+                # the Owner's contract is that every chart sits in the section
+                # for ITS OWN method. So the heading has to RESOLVE, and to
+                # this image's method. The previous rule only fired when the
+                # heading happened to name some other method, which let
+                # `## 结论` -- or any heading with no method word in it --
+                # carry any chart at all (QA's case).
+                head = next((lines[j] for j in range(i, -1, -1) if lines[j].startswith("## ")), None)
+                if head is None:
+                    problems.append(
+                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under no section at all;"
+                        f" a chart belongs under the heading that reasons about its method"
+                    )
+                    continue
+                head_method = next((tab for pat, tab in SECTION_WORDS if pat.search(head)), None)
+                if head_method is None:
+                    problems.append(
+                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`,"
+                        f" which names no method; a chart belongs under the heading that reasons about its own method"
+                    )
+                    continue
+                if head_method != want_tab:
+                    problems.append(
+                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`;"
+                        f" an image belongs in the section that reasons about it"
+                    )
+                    continue
+
+                near = " ".join(lines[i + 1:i + 4])
+                links = [u or b for _, u, b in APP_LINK.findall(near)]
+                if not links:
+                    problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
+                    continue
+                q = parse_qs(urlparse(links[0]).query)
                 if q.get("tab", [""])[0] != want_tab:
                     problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {want_tab}")
                 # A caption naming a timeframe binds the link to it: a 4h
