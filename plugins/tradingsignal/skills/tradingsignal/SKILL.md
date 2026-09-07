@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.40"
+  version: "0.1.41"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -63,6 +63,7 @@ and do not fill the gap from memory.
 - Higher timeframes set the backdrop; lower timeframes refine entries. Do not average away a deliberate `1d trend -> 4h pullback -> 1h restart` structure.
 - Never compare relative-strength percentiles from different market cohorts as absolute cross-market scores.
 - Never substitute a spot series for a futures ticker or silently splice data providers.
+- Currency pairs come back the way the market quotes them: USD/JPY, not JPY/USD. Ask for either spelling and the answer arrives in the conventional direction, with `quoteNotice` saying which way round it is. Report it as returned — do not invert prices, levels or targets to match how the user spelled the pair, and do not describe an inverted reading as if the product had produced one.
 - FX has no consolidated volume. Do not support an FX action with volume-derived claims unless the response supplies a valid, labelled proxy.
 - Fibonacci auto-detection is exploratory. Do not use it in screening weights, strong-confluence claims, or trading actions unless separately calibrated out of sample against nearby-anchor and ordinary support/resistance controls.
 - Do not return an entry action without a concrete invalidation level. Do not invent position sizing without the user's portfolio size and risk budget.
@@ -74,7 +75,11 @@ For every decision-relevant reason, return the claim, backing, why it matters, t
 
 Give every chart as a markdown link whose TEXT names the chart in words — `[查看 ETH/USDT 4小时 TD9 图](url)`, never a naked signed URL and never an inline image embed (`![](...)`). Chat clients do not reliably fetch remote images, and a broken placeholder then sits in exactly the position that claims to be the evidence; a long signed URL in the open is unreadable noise the user cannot tell apart from garbage. The link text carries symbol, timeframe and method, so the reader knows what they are opening before they click.
 
-Two different links, never conflated: a **chart URL** opens a picture; a **method-page URL** opens the product's live, interactive analysis for that symbol, timeframe and method. Offer the method page when the user wants "the latest analysis", the chart when the sentence's evidence is the picture. The method-page deep link follows the product's URL contract; until that contract ships, do not guess its parameters — a link that opens the wrong page is worse than no link.
+Two different links, never conflated: a **chart URL** opens a picture; a **method-page URL** opens the product's live, interactive analysis for that symbol, timeframe and method. Offer the method page when the user wants "the latest analysis", the chart when the sentence's evidence is the picture. **Never build the method-page link yourself**: every chart the tools return carries `openIn`, which opens the app at the same symbol, timeframe, method AND the same bar the analysis ran to, with the snapshot it was drawn from. A hand-built URL loses the snapshot, so the reader lands on live prices while the sentence beside it describes a different moment.
+
+Pass `conclusion` when you ask for a chart (`get_method_analysis`, `get_chart`, `get_levels`): one line, at most 80 characters, **your** reading rather than an engine's — it is printed at the top of the image. The picture then states the same thing as the prose beside it. Do not restate an engine's raw output there ("TD9 count is 9"); the number is already in the chart.
+
+The image captions itself with symbol, timeframe and the bar it is drawn to, and it is drawn from the exact bars the analysis ran on. When the history behind a chart has since moved, the image says so itself. So do not paraphrase the caption as if you had checked it, and do not claim a chart matches the analysis's other inputs — the check covers that symbol's own bar series at that timeframe, nothing else.
 
 Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, or `vcp`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
 
