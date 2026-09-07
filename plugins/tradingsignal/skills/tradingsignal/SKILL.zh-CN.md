@@ -14,6 +14,7 @@
 - 研究单个标的、周期或技术方法：读[单标的分析](references/symbol-analysis.zh-CN.md)。
 - 入场区、触发条件、失效位、目标、风险收益比或完整计划：读[条件式交易计划](references/trade-plan.zh-CN.md)。市场级请求应先使用对应的筛选工作流。
 - 风险优先审查、证据冲突或明确判断“今天没有机会”：先读共享的[市场筛选基础流程](references/opportunity-scan.zh-CN.md)，再读[无有效机会审查](references/no-trade-review.zh-CN.md)。
+- 把分析存进用户自己的 Obsidian vault 以便日后复盘，或回看以前的分析：读[写入 Obsidian](references/obsidian-vault.zh-CN.md)。默认不开，没有用户给的 vault 路径就不写任何文件。
 - 混合任务按顺序执行：先筛选，再用颗粒化模块分析候选，最后只为通过验证的标的制定计划。
 
 窄问题不要加载全部 reference。

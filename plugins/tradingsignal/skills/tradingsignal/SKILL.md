@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.12"
+  version: "0.1.13"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -19,6 +19,7 @@ Route the user's request to the narrowest TradingSignal workflow, load only the 
 - Deep research on one named symbol, one timeframe, or one technical method: read [single-symbol analysis](references/symbol-analysis.md).
 - Entry zone, trigger, invalidation, targets, risk/reward, or a complete conditional plan: read [conditional trade plan](references/trade-plan.md). For a market-wide request, first use the relevant screening workflow.
 - A risk-first review, conflicting evidence, or a request to state when nothing qualifies: read the shared [market-screening playbook](references/opportunity-scan.md), then [no-valid-opportunity review](references/no-trade-review.md).
+- Saving an analysis for later review, or reviewing past analyses, in the user's own Obsidian vault: read [recording to Obsidian](references/obsidian-vault.md). It is opt-in and writes nothing without a vault path the user gave.
 - If the request mixes these jobs, apply them in order: screen, analyze the shortlist with granular modules, then build plans only for candidates that survive validation.
 
 Do not load every reference for a narrow request.
