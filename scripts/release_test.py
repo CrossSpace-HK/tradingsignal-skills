@@ -126,8 +126,6 @@ class ReleaseScriptTest(unittest.TestCase):
         self.assertEqual(claude["mcpServers"]["tradingsignal"], codex["tradingsignal"])
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class VaultSuiteActuallyRuns(unittest.TestCase):
@@ -151,3 +149,7 @@ class VaultSuiteActuallyRuns(unittest.TestCase):
         for cls in ("VaultCheck", "VaultCheckProcess", "VaultCheckPostcondition"):
             self.assertIn(cls, out, f"{cls} did not execute under direct invocation")
         self.assertEqual(r.returncode, 0, out[-500:])
+
+
+if __name__ == "__main__":
+    unittest.main()

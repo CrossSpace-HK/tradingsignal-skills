@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.19"
+  version: "0.1.20"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -50,7 +50,9 @@ Treat the frontmatter `metadata.version` as the installed Skill release. The rep
 
 For every decision-relevant reason, return the claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and the matching module chart URL. Put the chart URL immediately after its reason.
 
-Give every chart as a plain, clickable URL — a bare URL or a markdown link whose text names the chart — never as an inline image embed (`![](...)`). Chat clients do not reliably fetch remote images, and a broken placeholder then sits in exactly the position that claims to be the evidence; a visible link the user can open is the form that works everywhere.
+Give every chart as a markdown link whose TEXT names the chart in words — `[查看 ETH/USDT 4小时 TD9 图](url)`, never a naked signed URL and never an inline image embed (`![](...)`). Chat clients do not reliably fetch remote images, and a broken placeholder then sits in exactly the position that claims to be the evidence; a long signed URL in the open is unreadable noise the user cannot tell apart from garbage. The link text carries symbol, timeframe and method, so the reader knows what they are opening before they click.
+
+Two different links, never conflated: a **chart URL** opens a picture; a **method-page URL** opens the product's live, interactive analysis for that symbol, timeframe and method. Offer the method page when the user wants "the latest analysis", the chart when the sentence's evidence is the picture. The method-page deep link follows the product's URL contract; until that contract ships, do not guess its parameters — a link that opens the wrong page is worse than no link.
 
 Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, or `vcp`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
 

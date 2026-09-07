@@ -92,6 +92,8 @@ If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.m
 
 Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256.
 
+Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; it follows the product's URL contract, and until that contract ships, leave the link out rather than guessing its parameters.
+
 **Do not archive a chart that shows something the note does not claim.** If the live chart draws a bar later than the note's `as_of` — a forming bar, or a series that has refreshed since — the image contradicts the note in the one position that claims to be its evidence. Say so and leave the image unarchived.
 
 Be exact about what an image proves. A screenshot proves the symbol and timeframe only if the picture itself is titled with them. It does not prove its own date; that comes from `data_digest`, from the store holding no later bar at archive time, and from the filename matching `analysis_id`. State that chain rather than letting the PNG stand in for it.

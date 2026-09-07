@@ -154,5 +154,40 @@ class ReportShape(unittest.TestCase):
                 self.assertIn("不要", line, f"reintroduces the miscount: {line.strip()[:70]}")
 
 
+class ChartLinksAreReadable(unittest.TestCase):
+    """The Owner's contract: a chart travels as a NAMED link, and the chart
+    URL is never conflated with the method-page URL."""
+
+    def test_the_named_link_form_is_mandated_in_both_languages(self):
+        for name, needle in (
+            ("SKILL.md", "whose TEXT names the chart"),
+            ("SKILL.zh-CN.md", "链接文字写明内容"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+    def test_naked_signed_urls_are_forbidden_in_both_languages(self):
+        for name, needle in (
+            ("SKILL.md", "never a naked signed URL"),
+            ("SKILL.zh-CN.md", "不裸露签名长串"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+    def test_chart_and_method_page_urls_are_distinguished(self):
+        for name, needles in (
+            ("SKILL.md", ("chart URL", "method-page URL", "do not guess its parameters")),
+            ("SKILL.zh-CN.md", ("图表 URL", "方法页 URL", "不要猜参数")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+    def test_the_vault_reference_links_frozen_record_to_living_view(self):
+        for name, needle in (
+            ("references/obsidian-vault.md", "LATEST analysis for the same symbol, timeframe and method"),
+            ("references/obsidian-vault.zh-CN.md", "同标的/同周期/同方法的最新分析"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+
 if __name__ == "__main__":
     unittest.main()
