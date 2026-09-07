@@ -94,23 +94,37 @@ procedure is numbered and none of its steps is optional or reorderable:
 
 ## `方法/` — the methodology, synced to the release that wrote it
 
-The vault keeps the skill's own method notes so a review can read what "VCP"
-or "TD9" MEANT when an analysis was made, not what it means today. Sync them
-whenever you write to the vault:
+`方法/<TOPIC>.md` mirrors the INSTALLED release. `方法/历史/<TOPIC>-<version>.md`
+holds a definition that has since been replaced, so an analysis carrying
+`skill_version: 0.1.12` can still be read against what that release meant by
+"VCP". Both halves are needed: without the mirror the vault drifts, and
+without the history an upgrade silently rewrites what every old analysis was
+citing.
 
-1. Read the installed release from this skill's `metadata.version`.
-2. For each topic in `vcp, chan, td9, wyckoff, levels, fib`, look at
-   `方法/<TOPIC>.md`. If it is missing, or its `skill_version` is not the
-   installed release, call `get_methodology(topic=<topic>)` and rewrite it.
-   Unchanged topics are left alone -- a rewrite with identical text still
-   churns the file's history for nothing.
-3. Store what the tool RETURNED, verbatim. Do not paraphrase, summarise or
-   "improve" it: analyses cite these notes as the definition they used, and
-   an edited definition makes every citation to it false.
-4. Front matter carries `topic`, `skill_version`, `updated`, and
-   `source: get_methodology`. A note that cannot say which release wrote it
-   cannot be told apart from a current one -- which is the whole failure this
-   sync exists to prevent.
+Do not perform this by hand. Two scripts ship with this skill:
+
+```
+python3 <skill-dir>/scripts/sync_methodology.py <vault> --needed <version>
+```
+
+prints the topics that are missing or stale. Call `get_methodology(topic=…)`
+for exactly those, write the returned texts VERBATIM into a JSON file keyed
+by topic, then:
+
+```
+python3 <skill-dir>/scripts/sync_methodology.py <vault> <version> fetched.json
+```
+
+The script decides everything that matters: an unchanged definition has its
+version bumped with no snapshot, because a snapshot per release regardless of
+content fills the vault with identical files and makes "did the methodology
+change?" unanswerable by looking. A changed definition is snapshotted under
+the release it belonged to BEFORE being replaced, and a snapshot is never
+rewritten.
+
+Store what the tool RETURNED, verbatim. Do not paraphrase, summarise or
+"improve" it: analyses cite these notes as the definition they used, and an
+edited definition makes every citation to it false.
 
 The check ships with this skill and reads its own release, so "is the
 methodology current?" is answerable without a network call.

@@ -214,6 +214,20 @@ def check_methods(vault: Path) -> list[str]:
     if not d.is_dir():
         return problems
     current = packaged_skill_version()
+    # `方法/历史/` holds outgoing definitions, pinned to the release that
+    # wrote them. They are SUPPOSED to be old -- checking them against the
+    # installed release would report every snapshot as stale, which is the
+    # opposite of what they are for.
+    for snap in sorted((d / "历史").glob("*.md")) if (d / "历史").is_dir() else []:
+        text = snap.read_text(encoding="utf-8")
+        version = frontmatter_value(text, "skill_version")
+        stem_version = snap.stem.rsplit("-", 1)[-1]
+        if not version:
+            problems.append(f"方法/历史/{snap.name}: no `skill_version`; a snapshot that cannot say which release it froze is not evidence")
+        elif version != stem_version:
+            problems.append(f"方法/历史/{snap.name}: frontmatter says {version} but the filename says {stem_version}")
+        elif current and version == current:
+            problems.append(f"方法/历史/{snap.name}: snapshots the INSTALLED release; history is for definitions that have been replaced")
     for note in sorted(d.glob("*.md")):
         # A directory README explains the directory; it is not a synced
         # topic note and has no release to be current with.

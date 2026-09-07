@@ -146,9 +146,24 @@ class VaultSuiteActuallyRuns(unittest.TestCase):
         m = re.search(r"Ran (\d+) tests", out)
         self.assertIsNotNone(m, out[-500:])
         self.assertGreaterEqual(int(m.group(1)), 18, "the direct run executed fewer criteria than the suite holds")
-        for cls in ("VaultCheck", "VaultCheckProcess", "VaultCheckPostcondition"):
+        for cls in ("VaultCheck", "VaultCheckProcess", "VaultCheckPostcondition", "VaultCheckMethodology"):
             self.assertIn(cls, out, f"{cls} did not execute under direct invocation")
         self.assertEqual(r.returncode, 0, out[-500:])
+
+    def test_the_sync_suite_runs_directly_too(self):
+        import re
+        import subprocess
+        import sys
+        from pathlib import Path
+        r = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("sync_methodology_test.py")), "-v"],
+            capture_output=True, text=True,
+        )
+        out = r.stderr + r.stdout
+        m = re.search(r"Ran (\d+) tests", out)
+        self.assertIsNotNone(m, out[-400:])
+        self.assertGreaterEqual(int(m.group(1)), 7)
+        self.assertEqual(r.returncode, 0, out[-400:])
 
 
 if __name__ == "__main__":
