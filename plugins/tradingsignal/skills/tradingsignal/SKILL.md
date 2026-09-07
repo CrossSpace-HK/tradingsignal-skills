@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.14"
+  version: "0.1.15"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -49,6 +49,8 @@ Treat the frontmatter `metadata.version` as the installed Skill release. The rep
 ## Evidence contract
 
 For every decision-relevant reason, return the claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and the matching module chart URL. Put the chart URL immediately after its reason.
+
+Give every chart as a plain, clickable URL — a bare URL or a markdown link whose text names the chart — never as an inline image embed (`![](...)`). Chat clients do not reliably fetch remote images, and a broken placeholder then sits in exactly the position that claims to be the evidence; a visible link the user can open is the form that works everywhere.
 
 Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, or `vcp`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
 
