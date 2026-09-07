@@ -402,6 +402,32 @@ class VaultCheckPostcondition(unittest.TestCase):
         note.write_text(text + "\n## 链接\n\n![[附件/cccccc-td9.png]]\n\n[查看](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)\n", encoding="utf-8")
         self.assertTrue(any("pooled with the links" in p for p in check(self.dir)))
 
+    def test_a_td9_image_under_a_VCP_section_fails(self):
+        # QA's counterexample: correct slot, correct link, wrong section --
+        # the previous rule only forbade the 链接 section, so this passed.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        text = note.read_text(encoding="utf-8").replace(
+            "![[附件/cccccc-td9.png]]", "## VCP 形态\n\n![[附件/cccccc-td9.png]]")
+        note.write_text(text.replace("methods: [td9]", "methods: [td9, vcp]"), encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("sits under" in p for p in found), found)
+
+    def test_a_td9_image_under_a_TD9_section_passes(self):
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8").replace(
+            "![[附件/cccccc-td9.png]]", "## TD9 序列\n\n![[附件/cccccc-td9.png]]"), encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
+
+    def test_an_image_under_a_section_naming_no_method_is_allowed(self):
+        # `## 结论` reasons about the whole analysis; a chart there is fine.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8").replace(
+            "![[附件/cccccc-td9.png]]", "## 结论\n\n![[附件/cccccc-td9.png]]"), encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
+
     def test_a_missing_vocabulary_fails_closed(self):
         self.note()
         (self.dir / "标签.md").unlink()

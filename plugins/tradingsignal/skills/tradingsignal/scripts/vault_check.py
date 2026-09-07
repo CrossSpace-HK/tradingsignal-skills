@@ -404,6 +404,19 @@ def check(vault: Path) -> list[str]:
                 if i > link_section:
                     problems.append(f"分析/{note.name}: {m.group(1)} is embedded under 链接; an image belongs at the reason it supports, not pooled with the links")
                     continue
+                # The nearest heading above it IS the reason it supports. If
+                # that heading names a method, it must be this image's own:
+                # "not under 链接" was satisfied by every other section, so a
+                # TD9 chart could sit under `## VCP` and pass (QA's case).
+                head = next((lines[j] for j in range(i, -1, -1) if lines[j].startswith("## ")), "")
+                head_method = next((tab for pat, tab in METHOD_WORDS if pat.search(head)), None)
+                img_method = SLOT_TAB.get(m.group(1).rsplit("-", 1)[-1].removesuffix(".png"))
+                if head_method and img_method and head_method != img_method:
+                    problems.append(
+                        f"分析/{note.name}: {m.group(1)} draws {img_method} but sits under `{head.strip()}`;"
+                        f" an image belongs in the section that reasons about it"
+                    )
+                    continue
                 slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
                 near = " ".join(lines[i + 1:i + 4])
                 links = [u or b for _, u, b in APP_LINK.findall(near)]
