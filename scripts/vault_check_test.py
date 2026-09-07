@@ -335,6 +335,79 @@ class VaultCheckPostcondition(unittest.TestCase):
                         .replace("image_archived: true", "image_archived: false") + "\n未归档。\n", encoding="utf-8")
         self.assertTrue(any("未完整保存" in p for p in check(self.dir)))
 
+    def test_deleting_image_archived_does_not_skip_the_image_contract(self):
+        # QA's bypass: an otherwise-valid note with the field REMOVED. Real
+        # embed, real hashes, correct section and link -- and the checker
+        # returned clean, because the rule was `if true / elif false` and a
+        # missing value matched neither arm. Absent is not permission.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text("\n".join(
+            l for l in note.read_text(encoding="utf-8").splitlines()
+            if not l.startswith("image_archived:")) + "\n", encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("未完整保存" in p for p in found), found)
+        self.assertTrue(any("image_archived" in p for p in found), found)
+
+    def test_a_non_boolean_image_archived_fails(self):
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8").replace(
+            "image_archived: true", "image_archived: yes"), encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("not true or false" in p for p in found), found)
+        self.assertTrue(any("未完整保存" in p for p in found), found)
+
+    def test_a_second_image_on_the_same_line_is_checked_too(self):
+        # QA's bypass: two embeds on ONE line, both declared and hashed, the
+        # line under `## TD9 序列` with only a TD9 link beneath. The old loop
+        # used EMBED.search(line) and stopped at the first, so the VCP image
+        # escaped both the section rule and the link rule.
+        self.note()
+        png = b"a vcp chart"
+        (self.dir / "附件" / "cccccc-vcp.png").write_bytes(png)
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(
+            note.read_text(encoding="utf-8")
+            .replace("methods: [td9]", "methods: [td9, vcp]")
+            .replace("  td9: ", f"  vcp: {hashlib.sha256(png).hexdigest()}\n  td9: ")
+            .replace("![[附件/cccccc-td9.png]]",
+                     "![[附件/cccccc-td9.png]] ![[附件/cccccc-vcp.png]]"),
+            encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("cccccc-vcp.png draws vcp but sits under" in p for p in found), found)
+
+    def test_the_second_image_on_a_line_is_held_to_its_own_link(self):
+        # The other half of the same bypass. Both images sit under `## VCP
+        # 形态`, so the SECOND one passes the section rule and reaches the
+        # link rule -- where the only link beneath the line is TD9's. If the
+        # loop still stopped at the first embed, nothing would say so.
+        self.note()
+        png = b"a vcp chart"
+        (self.dir / "附件" / "cccccc-vcp.png").write_bytes(png)
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(
+            note.read_text(encoding="utf-8")
+            .replace("methods: [td9]", "methods: [td9, vcp]")
+            .replace("  td9: ", f"  vcp: {hashlib.sha256(png).hexdigest()}\n  td9: ")
+            .replace("## TD9 序列", "## VCP 形态")
+            .replace("![[附件/cccccc-td9.png]]",
+                     "![[附件/cccccc-td9.png]] ![[附件/cccccc-vcp.png]]"),
+            encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("the link under cccccc-vcp.png opens tab=td9" in p for p in found), found)
+
+    def test_one_image_per_line_still_reads_its_caption_from_the_line(self):
+        # The finditer change must not narrow the caption rule for the
+        # ordinary single-image line, which is how every real note is written.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        text = note.read_text(encoding="utf-8").replace(
+            "![[附件/cccccc-td9.png]]", "![[附件/cccccc-td9.png]] 4h")
+        note.write_text(text.replace("timeframe: 1d", "timeframe: 1d\ncontext_timeframes: [4h]"),
+                        encoding="utf-8")
+        self.assertTrue(any("caption says 4h" in p for p in check(self.dir)), check(self.dir))
+
     def test_an_embedded_image_that_declares_no_hash_fails(self):
         # QA's counterexample, reproduced: a REAL second attachment, embedded
         # in the body under its own method section with a correct deep link,

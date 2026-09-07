@@ -31,7 +31,10 @@ REQUIRED_DIRS = ["分析", "标的", "附件"]
 # `skill_version` is required: without it an analysis cannot choose which
 # methodology definition it was made under, which is the whole point of
 # keeping the history (QA's finding).
-REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags", "skill_version"]
+# `image_archived` is required because its ABSENCE used to skip the whole
+# image contract -- no attachment check, no embed check, and no incomplete
+# report either. A note could drop one line and buy silence (QA).
+REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags", "skill_version", "image_archived"]
 ANALYSIS_TEMPLATE = Path("_模板") / "分析.md"
 DATAVIEW_BLOCK = re.compile(r"```dataview\n(.*?)```", re.S)
 TABLE_LINE = re.compile(r"^\s*TABLE\s+(.+)$", re.M | re.I)
@@ -472,6 +475,15 @@ def check(vault: Path) -> list[str]:
 
         archived = frontmatter_value(text, "image_archived")
         aid = frontmatter_value(text, "analysis_id")
+        if archived not in ("true", "false"):
+            # Absent is not permission. The old shape was `if true / elif
+            # false`, so a note with the field deleted -- real embeds, real
+            # hashes, everything else valid -- fell through both arms and
+            # read as clean.
+            problems.append(
+                f"分析/{note.name}: image_archived is `{archived or 'absent'}`, not true or false;"
+                f" the image contract cannot be applied and a save that cannot prove its chart is not complete"
+            )
         if archived == "true" and aid:
             files = {f.name: f for f in (vault / "附件").glob(f"{aid}-*.png")}
             if not files:
@@ -528,76 +540,89 @@ def check(vault: Path) -> list[str]:
             # nobody reads next to the sentence it proves.
             link_section = next((i for i, l in enumerate(lines) if l.strip().startswith("## 链接")), len(lines))
             for i, line in enumerate(lines):
-                m = EMBED.search(line)
-                if not m:
-                    continue
-                if i > link_section:
-                    problems.append(f"分析/{note.name}: {m.group(1)} is embedded under 链接; an image belongs at the reason it supports, not pooled with the links")
-                    continue
-                slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
-                # What method does THIS image draw? From the closed slot map,
-                # or -- for a slot the map does not name, `main` included --
-                # from an explicit `primary_method`. No binding, no pass.
-                # Resolved BEFORE the section check so a bound `main` image is
-                # held to its section too, which it previously escaped.
-                want_tab = SLOT_TAB.get(slot)
-                if want_tab is None:
-                    want_tab = frontmatter_value(text, "primary_method")
-                    if not want_tab:
+                # finditer, not search: two embeds on ONE line meant only the
+                # first was ever checked, so a second image could sit in the
+                # wrong section with no link of its own and still pass. The
+                # `embedded` SET saw both, which is why the declaration rules
+                # caught nothing either (QA).
+                for m in EMBED.finditer(line):
+                    if i > link_section:
+                        problems.append(f"分析/{note.name}: {m.group(1)} is embedded under 链接; an image belongs at the reason it supports, not pooled with the links")
+                        continue
+                    slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
+                    # What method does THIS image draw? From the closed slot map,
+                    # or -- for a slot the map does not name, `main` included --
+                    # from an explicit `primary_method`. No binding, no pass.
+                    # Resolved BEFORE the section check so a bound `main` image is
+                    # held to its section too, which it previously escaped.
+                    want_tab = SLOT_TAB.get(slot)
+                    if want_tab is None:
+                        want_tab = frontmatter_value(text, "primary_method")
+                        if not want_tab:
+                            problems.append(
+                                f"分析/{note.name}: {m.group(1)} uses slot `{slot}`, which names no method; "
+                                f"bind it with primary_method or rename the file to a known slot ({', '.join(sorted(SLOT_TAB))})"
+                            )
+                            continue
+                        if want_tab not in APP_TABS:
+                            problems.append(f"分析/{note.name}: primary_method `{want_tab}` is not a tab the product has")
+                            continue
+
+                    # The nearest heading above it IS the reason it supports, and
+                    # the Owner's contract is that every chart sits in the section
+                    # for ITS OWN method. So the heading has to RESOLVE, and to
+                    # this image's method. The previous rule only fired when the
+                    # heading happened to name some other method, which let
+                    # `## 结论` -- or any heading with no method word in it --
+                    # carry any chart at all (QA's case).
+                    head = next((lines[j] for j in range(i, -1, -1) if lines[j].startswith("## ")), None)
+                    if head is None:
                         problems.append(
-                            f"分析/{note.name}: {m.group(1)} uses slot `{slot}`, which names no method; "
-                            f"bind it with primary_method or rename the file to a known slot ({', '.join(sorted(SLOT_TAB))})"
+                            f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under no section at all;"
+                            f" a chart belongs under the heading that reasons about its method"
                         )
                         continue
-                    if want_tab not in APP_TABS:
-                        problems.append(f"分析/{note.name}: primary_method `{want_tab}` is not a tab the product has")
+                    head_method = next((tab for pat, tab in SECTION_WORDS if pat.search(head)), None)
+                    if head_method is None:
+                        problems.append(
+                            f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`,"
+                            f" which names no method; a chart belongs under the heading that reasons about its own method"
+                        )
+                        continue
+                    if head_method != want_tab:
+                        problems.append(
+                            f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`;"
+                            f" an image belongs in the section that reasons about it"
+                        )
                         continue
 
-                # The nearest heading above it IS the reason it supports, and
-                # the Owner's contract is that every chart sits in the section
-                # for ITS OWN method. So the heading has to RESOLVE, and to
-                # this image's method. The previous rule only fired when the
-                # heading happened to name some other method, which let
-                # `## 结论` -- or any heading with no method word in it --
-                # carry any chart at all (QA's case).
-                head = next((lines[j] for j in range(i, -1, -1) if lines[j].startswith("## ")), None)
-                if head is None:
-                    problems.append(
-                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under no section at all;"
-                        f" a chart belongs under the heading that reasons about its method"
-                    )
-                    continue
-                head_method = next((tab for pat, tab in SECTION_WORDS if pat.search(head)), None)
-                if head_method is None:
-                    problems.append(
-                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`,"
-                        f" which names no method; a chart belongs under the heading that reasons about its own method"
-                    )
-                    continue
-                if head_method != want_tab:
-                    problems.append(
-                        f"分析/{note.name}: {m.group(1)} draws {want_tab} but sits under `{head.strip()}`;"
-                        f" an image belongs in the section that reasons about it"
-                    )
-                    continue
-
-                near = " ".join(lines[i + 1:i + 4])
-                links = [u or b for _, u, b in APP_LINK.findall(near)]
-                if not links:
-                    problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
-                    continue
-                q = parse_qs(urlparse(links[0]).query)
-                if q.get("tab", [""])[0] != want_tab:
-                    problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {want_tab}")
-                # A caption naming a timeframe binds the link to it: a 4h
-                # image may not carry a 1d link.
-                cap = TF_WORDS.search(line)
-                if cap and q.get("timeframe"):
-                    want = cap.group(1) or (f"{cap.group(2)}h" if cap.group(2) else TF_ZH.get(cap.group(0), ""))
-                    if want and q["timeframe"][0] != want:
-                        problems.append(f"分析/{note.name}: the image caption says {want} but its link opens {q['timeframe'][0]}")
-        elif archived == "false":
-            if "未归档" not in text:
+                    near = " ".join(lines[i + 1:i + 4])
+                    links = [u or b for _, u, b in APP_LINK.findall(near)]
+                    if not links:
+                        problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
+                        continue
+                    q = parse_qs(urlparse(links[0]).query)
+                    if q.get("tab", [""])[0] != want_tab:
+                        problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {want_tab}")
+                    # A caption naming a timeframe binds the link to it: a 4h
+                    # image may not carry a 1d link.
+                    # The caption is the embed's own `|...` text. Reading the
+                    # whole LINE was harmless while only one embed per line
+                    # was ever checked; now that every embed is, one image's
+                    # caption would bind the timeframe of the one beside it.
+                    # The line is still used when it holds a single embed, so
+                    # a caption written beside it keeps working.
+                    cap_text = m.group(0) if len(EMBED.findall(line)) > 1 else line
+                    cap = TF_WORDS.search(cap_text)
+                    if cap and q.get("timeframe"):
+                        want = cap.group(1) or (f"{cap.group(2)}h" if cap.group(2) else TF_ZH.get(cap.group(0), ""))
+                        if want and q["timeframe"][0] != want:
+                            problems.append(f"分析/{note.name}: the image caption says {want} but its link opens {q['timeframe'][0]}")
+        else:
+            # EVERY non-archived state owes the report, not just an explicit
+            # `false`: `elif archived == "false"` was the second half of the
+            # same hole.
+            if archived == "false" and "未归档" not in text:
                 problems.append(f"分析/{note.name}: image_archived is false but the body never says 未归档; the evidence gap must be stated, not implied")
             # Stating the gap makes the record HONEST; it does not make the
             # save complete. A vault write the user asked for owes at least
