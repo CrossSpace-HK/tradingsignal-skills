@@ -60,6 +60,11 @@ procedure is numbered and none of its steps is optional or reorderable:
    its method link directly beneath. Each image's link must match THAT
    image: the slot's method and, when the caption names a timeframe, that
    timeframe. A 4h chart may not carry a 1d link.
+   The slot names the method, from a closed set -- `levels, vcp, chan, td9,
+   wyckoff, fib, trend, indicators` -- and the file is `附件/<id>-<slot>.png`.
+   A slot outside that set (`main`, anything new) has no implied method, so
+   it must be bound explicitly with `primary_method: <tab>` in front matter;
+   unbound, the save fails rather than accepting any tab at all.
    When the evidence chain genuinely cannot close -- the live chart draws a
    bar later than the note's `as_of`, or no logged-in browser is available --
    the note is still written, with the 未归档 marker and what is missing, but

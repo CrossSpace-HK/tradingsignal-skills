@@ -65,6 +65,16 @@ METHOD_WORDS: list[tuple[re.Pattern[str], str]] = [
 # link that must sit under it names the same method the image draws.
 EMBED = re.compile(r"!\[\[附件/([^\]|]+?)(?:\|[^\]]*)?\]\]")
 METHOD_TABS = {"vcp", "td9", "chan", "wyckoff", "levels", "fib"}
+
+# Every slot a note may archive, and the tab its link must open. A CLOSED
+# set: a slot outside it has no implied method, so it cannot be checked by
+# guessing -- the note must bind it with `primary_method` or the save fails.
+# The first version only listed the six method slots, which left `trend`,
+# `indicators` and `main` free to carry any tab at all.
+SLOT_TAB = {
+    "levels": "levels", "vcp": "vcp", "chan": "chan", "td9": "td9",
+    "wyckoff": "wyckoff", "fib": "fib", "trend": "trend", "indicators": "indicators",
+}
 TF_WORDS = re.compile(r"\b(1m|5m|15m|30m|1h|2h|4h|1d|1w|1mo)\b|(\d+)\s*小时|日线|周线|月线")
 TF_ZH = {"日线": "1d", "周线": "1w", "月线": "1mo"}
 
@@ -92,7 +102,12 @@ def frontmatter_value(text: str, key: str) -> str | None:
     if len(parts) < 3:
         return None
     m = re.search(rf"^{key}:\s*(.+?)\s*$", parts[1], re.M)
-    return m.group(1).strip("\"'") if m else None
+    if not m:
+        return None
+    # A trailing YAML comment is not part of the value. Without this the
+    # comment travelled into the comparison and a correctly-bound field read
+    # as an unknown tab.
+    return re.sub(r"\s+#.*$", "", m.group(1)).strip().strip("\"'")
 
 
 def frontmatter_tags(text: str) -> list[str]:
@@ -324,8 +339,23 @@ def check(vault: Path) -> list[str]:
                     problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
                     continue
                 q = parse_qs(urlparse(links[0]).query)
-                if slot in METHOD_TABS and q.get("tab", [""])[0] != slot:
-                    problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {slot}")
+                # What method does THIS image draw? From the closed slot map,
+                # or -- for a slot the map does not name, `main` included --
+                # from an explicit `primary_method`. No binding, no pass.
+                want_tab = SLOT_TAB.get(slot)
+                if want_tab is None:
+                    want_tab = frontmatter_value(text, "primary_method")
+                    if not want_tab:
+                        problems.append(
+                            f"分析/{note.name}: {m.group(1)} uses slot `{slot}`, which names no method; "
+                            f"bind it with primary_method or rename the file to a known slot ({', '.join(sorted(SLOT_TAB))})"
+                        )
+                        continue
+                    if want_tab not in APP_TABS:
+                        problems.append(f"分析/{note.name}: primary_method `{want_tab}` is not a tab the product has")
+                        continue
+                if q.get("tab", [""])[0] != want_tab:
+                    problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {want_tab}")
                 # A caption naming a timeframe binds the link to it: a 4h
                 # image may not carry a 1d link.
                 cap = TF_WORDS.search(line)

@@ -351,6 +351,48 @@ class VaultCheckPostcondition(unittest.TestCase):
         note.write_text(text.replace("timeframe: 1d", "timeframe: 1d\ncontext_timeframes: [4h]"), encoding="utf-8")
         self.assertTrue(any("caption says 4h" in p for p in check(self.dir)))
 
+    def slot(self, slot_name, tab, methods="td9"):
+        """One archived image under `slot_name`, linked to `tab`."""
+        png = b"another png"
+        (self.dir / "附件" / f"cccccc-{slot_name}.png").write_bytes(png)
+        import hashlib as _h
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        base = (ARCHIVED.format(main=_h.sha256(png).hexdigest(), td9=_h.sha256(png).hexdigest())
+                .replace("  td9: ", f"  {slot_name}: ")
+                .replace("methods: [td9]", f"methods: [{methods}]"))
+        # Drop the base fixture's own image and link: this note has ONE
+        # image, the slot under test, or the leftover td9 link fails a rule
+        # that has nothing to do with what is being tested.
+        base = base.split("body")[0] + "body\n"
+        note.write_text(
+            base + f"\n![[附件/cccccc-{slot_name}.png]]\n\n[查看](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab={tab})\n",
+            encoding="utf-8")
+        (self.dir / "附件" / "cccccc-td9.png").unlink(missing_ok=True)
+
+    def test_a_trend_image_linked_to_another_tab_fails(self):
+        # `trend` is a real product tab; the first slot map left it unguarded.
+        self.slot("trend", "vcp", methods="trend, vcp")
+        self.assertTrue(any("the image draws trend" in p for p in check(self.dir)))
+
+    def test_an_indicators_image_linked_to_another_tab_fails(self):
+        self.slot("indicators", "levels", methods="indicators, levels")
+        self.assertTrue(any("the image draws indicators" in p for p in check(self.dir)))
+
+    def test_an_unknown_slot_without_a_binding_fails_closed(self):
+        # `main` names no method, so it may not pass on any tab at all.
+        self.slot("main", "vcp", methods="vcp")
+        self.assertTrue(any("names no method" in p for p in check(self.dir)))
+
+    def test_an_unknown_slot_WITH_a_binding_is_checked_against_it(self):
+        self.slot("main", "vcp", methods="vcp, indicators")
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        text = note.read_text(encoding="utf-8").replace("image_archived: true", "image_archived: true\nprimary_method: indicators")
+        note.write_text(text, encoding="utf-8")
+        # Bound to indicators, linked to vcp -> caught.
+        self.assertTrue(any("the image draws indicators" in p for p in check(self.dir)))
+        note.write_text(text.replace("tab=vcp", "tab=indicators"), encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
+
     def test_a_missing_vocabulary_fails_closed(self):
         self.note()
         (self.dir / "标签.md").unlink()
