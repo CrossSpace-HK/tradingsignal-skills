@@ -208,5 +208,31 @@ class TwoSurfacesForCharts(unittest.TestCase):
                 self.assertIn(needle, text, f"{name} is missing '{needle}'")
 
 
+class ExpiredSessionGuidance(unittest.TestCase):
+    """The Owner's screenshot: inside Codex, the model told him to open
+    `/mcp` and pick tradingsignal. Codex's list does not contain it -- that
+    is Claude Code's idiom, emitted for the wrong client."""
+
+    def test_the_terminal_command_is_given_per_client(self):
+        for name, needles in (
+            ("SKILL.md", ("codex mcp login tradingsignal", "claude mcp login tradingsignal")),
+            ("SKILL.zh-CN.md", ("codex mcp login tradingsignal", "claude mcp login tradingsignal")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+    def test_the_in_session_menu_path_is_forbidden_unless_seen(self):
+        for name, needle in (
+            ("SKILL.md", "unless you have SEEN that server listed"),
+            ("SKILL.zh-CN.md", "除非你在**本次会话里真的看到**"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+    def test_it_says_where_the_command_is_typed(self):
+        for name, needle in (("SKILL.md", "in the terminal"), ("SKILL.zh-CN.md", "在终端里输入")):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+
 if __name__ == "__main__":
     unittest.main()

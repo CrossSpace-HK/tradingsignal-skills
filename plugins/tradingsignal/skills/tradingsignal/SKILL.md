@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.34"
+  version: "0.1.35"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -32,6 +32,24 @@ Treat the frontmatter `metadata.version` as the installed Skill release. The rep
 - Compare valid semantic versions. Mention an update once, after the market answer, only when `skillRelease.version` is strictly newer than `metadata.version`.
 - Only after that comparison is positive, call `get_methodology` with `topic: "skill-update"`. Give its update command for the active client; if the client is unknown, label both client commands instead of guessing.
 - Say nothing about updates when the versions match, the published version is older, or either field is absent or invalid. An update check must never block the requested analysis.
+
+## When the MCP session has expired
+
+An OAuth session lapses, and every tool call then fails. Say so plainly and
+give the ONE command that fixes it for the client actually in use:
+
+- **Codex** — in the terminal: `codex mcp login tradingsignal`
+- **Claude Code** — in the terminal: `claude mcp login tradingsignal`
+
+Never describe an in-session menu path -- `/mcp` → pick the server →
+Authenticate -- unless you have SEEN that server listed in this session.
+That path is a Claude Code idiom; emitted inside Codex it sends the user to a
+list their client does not show, and they cannot tell a wrong instruction
+from a broken install. Say where the command is typed: the terminal, not the
+chat box. If the client is unknown, give both labelled, and do not guess.
+
+Then stop and wait. Do not continue an analysis on data you could not fetch,
+and do not fill the gap from memory.
 
 ## Shared rules
 
