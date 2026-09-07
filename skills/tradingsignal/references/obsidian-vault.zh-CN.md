@@ -28,7 +28,8 @@
 1. **先定身份。** `analysis_id` = 6 位小写十六进制，本篇固定。文件名 =
    `YYYY-MM-DD-<SYMBOL>-<周期>-<id>.md`：`<SYMBOL>` 去掉 `=X` 后只留字母数字
    （`BTC/USDT` → `BTCUSDT`）；`<周期>` 是**决策周期**——多周期研究仍然只在一个周期上做决定，
-   那个周期进文件名和 `timeframe` 字段，其余周期写在正文里作背景。「多周期」不是周期，
+   那个周期进文件名和 `timeframe` 字段；正文引用的其他周期写进 `context_timeframes`，
+   这也是允许链接指向它们的依据。「多周期」不是周期，
    没法排序也没法筛选。
 2. **frontmatter 从 `_模板/分析.md` 整套照抄**——每个键都要，不加新键、不改名。
    字段值用 vault 自己的词表，不要换一种语言自造。
@@ -88,7 +89,7 @@ data_staleness_days             # 序列落后时，as_of 与今天的差
 `https://tradingsignal.pro/app?market=<市场>&symbol=<URL编码的symbol>&timeframe=<周期>&tab=<tab>`，
 `tab` 取 `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` 之一，由方法决定
 （VCP → `vcp`、TD/DeMark → `td9`、缠论 → `chan`、威科夫 → `wyckoff`、支撑阻力 → `levels`）。
-缺 symbol、timeframe 或 tab 任何一项的链接不是深链，是猜测——checker 会拒绝。
+缺 market、symbol、timeframe、tab 任何一项的链接不是深链，是猜测。**参数齐全但指错更糟**：checker 还要求链接打开的就是本篇的标的——同 symbol、同 market、周期是本篇决策周期或 frontmatter 里 `context_timeframes` 声明过的背景周期——并且 tab 必须与链接文字承诺的方法一致、且是本篇真正跑过的方法。一条能通过形状检查、却把读者带到另一张图的链接，正是这套检查要防的。
 
 **图上画的东西如果超出笔记的说法，就不要归档。** 实时图里画出比 `as_of` 更晚的 K 线（正在形成的那根，或者序列已经刷新过），这张图就在「本篇证据」这个位置上和笔记自相矛盾。说明情况，把图留空。
 

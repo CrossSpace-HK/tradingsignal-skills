@@ -24,7 +24,7 @@ import hashlib
 import re
 import sys
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 REQUIRED_DIRS = ["分析", "标的", "附件"]
 REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags"]
@@ -43,7 +43,29 @@ ANALYSIS_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[A-Za-z0-9]+-[A-Za-z0-9]+-[0
 # without `tab=` opens whatever the default is -- which is how the first
 # Codex run produced a "view the VCP analysis" link that did not open VCP.
 APP_TABS = {"indicators", "levels", "trend", "fib", "chan", "td9", "vcp", "wyckoff"}
-APP_LINK = re.compile(r"https?://[^\s)\]>]*?/app\?[^\s)\]>]*")
+# A link is markdown, so its TEXT is available and is what the reader trusts.
+APP_LINK = re.compile(r"\[([^\]]*)\]\((https?://[^\s)]*?/app\?[^\s)]*)\)|(?<![\(\[])(https?://[^\s)\]>]*?/app\?[^\s)\]>]*)")
+
+# What a method is called, in either language, and the tab that shows it.
+# The link text promises a method; the tab decides what opens. When they
+# disagree the text is a lie the reader cannot see (QA's NVDA case, one
+# level deeper).
+METHOD_WORDS: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bVCP\b", re.I), "vcp"),
+    (re.compile(r"\bTD ?9\b|\bDeMark\b|TD ?序列", re.I), "td9"),
+    (re.compile(r"\bChan\b|缠论", re.I), "chan"),
+    (re.compile(r"\bWyckoff\b|威科夫", re.I), "wyckoff"),
+    (re.compile(r"支撑阻力|\blevels?\b|\bsupport\b", re.I), "levels"),
+    (re.compile(r"斐波那契|\bfibonacci\b|\bfib\b", re.I), "fib"),
+]
+
+# Which markets each asset class may name, so a link cannot open the right
+# symbol under the wrong tab group.
+MARKET_FOR_CLASS = {
+    "equity_us": "stock", "equity_intl": "stock", "crypto": "crypto",
+    "fx": "forex", "commodity_spot": "commodity", "commodity_future": "commodity",
+    "index": "stock", "futures": "commodity",
+}
 
 
 def frontmatter_keys(text: str) -> set[str]:
@@ -205,13 +227,51 @@ def check(vault: Path) -> list[str]:
         # Every /app link is judged against the LIVE URL contract: symbol,
         # timeframe and a tab from the closed set, or it silently opens some
         # other view while its text promises a method (QA's NVDA case).
-        for link in APP_LINK.findall(text):
+        note_tf = frontmatter_value(text, "timeframe")
+        note_market = frontmatter_value(text, "market")
+        note_class = frontmatter_value(text, "asset_class")
+        context_tfs = {t.strip() for t in (frontmatter_value(text, "context_timeframes") or "").strip("[]").split(",") if t.strip()}
+        note_methods = {m.strip() for m in (frontmatter_value(text, "methods") or "").strip("[]").split(",") if m.strip()}
+
+        for label, url, bare in APP_LINK.findall(text):
+            link, why_text = (url, label) if url else (bare, "")
             q = parse_qs(urlparse(link).query)
-            missing_q = [k for k in ("symbol", "timeframe", "tab") if k not in q]
+            missing_q = [k for k in ("market", "symbol", "timeframe", "tab") if k not in q]
             if missing_q:
                 problems.append(f"分析/{note.name}: /app link missing {', '.join(missing_q)}; without them it is not a deep link, it is a guess")
-            elif q["tab"][0] not in APP_TABS:
-                problems.append(f"分析/{note.name}: /app link tab `{q['tab'][0]}` is not a tab the product has")
+                continue
+            tab = q["tab"][0]
+            if tab not in APP_TABS:
+                problems.append(f"分析/{note.name}: /app link tab `{tab}` is not a tab the product has")
+
+            # The link must open THIS note's instrument. A complete-looking
+            # link to another symbol is the worst kind: it passes a shape
+            # check and shows the reader a different chart.
+            if symbol and unquote(q["symbol"][0]) != symbol:
+                problems.append(f"分析/{note.name}: /app link opens {unquote(q['symbol'][0])}, but this analysis is about {symbol}")
+            if note_market and q["market"][0] != note_market:
+                problems.append(f"分析/{note.name}: /app link says market={q['market'][0]}, the note says {note_market}")
+            elif note_class and MARKET_FOR_CLASS.get(note_class) and q["market"][0] != MARKET_FOR_CLASS[note_class]:
+                problems.append(f"分析/{note.name}: /app link says market={q['market'][0]}, but asset_class {note_class} belongs to {MARKET_FOR_CLASS[note_class]}")
+
+            # The decision timeframe, or one this note DECLARES as context.
+            # A multi-timeframe study legitimately links its background
+            # timeframe -- but it has to have said so in front matter.
+            if note_tf and q["timeframe"][0] != note_tf and q["timeframe"][0] not in context_tfs:
+                problems.append(
+                    f"分析/{note.name}: /app link opens {q['timeframe'][0]}, but this analysis is about {note_tf}"
+                    + (" and declares no other timeframe in context_timeframes" if not context_tfs else f" (context: {', '.join(sorted(context_tfs))})")
+                )
+
+            # The text promises a method; the tab must be that method's.
+            for pattern, want_tab in METHOD_WORDS:
+                if pattern.search(why_text):
+                    if tab != want_tab:
+                        problems.append(f"分析/{note.name}: the link text promises {want_tab} but tab={tab}; the reader cannot see the difference")
+                    break
+            # A method tab must be a method this analysis actually ran.
+            if tab in {"vcp", "td9", "chan", "wyckoff", "levels", "fib"} and note_methods and tab not in note_methods:
+                problems.append(f"分析/{note.name}: /app link opens {tab}, which is not among this analysis's methods ({', '.join(sorted(note_methods))})")
 
         archived = frontmatter_value(text, "image_archived")
         aid = frontmatter_value(text, "analysis_id")

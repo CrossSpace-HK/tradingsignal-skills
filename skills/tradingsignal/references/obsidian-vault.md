@@ -31,8 +31,9 @@ procedure is numbered and none of its steps is optional or reorderable:
    where `<SYMBOL>` is the symbol with `=X` dropped and every non-alphanumeric
    removed (`BTC/USDT` → `BTCUSDT`), and `<timeframe>` is the **decision
    timeframe**. A multi-timeframe study still decides on one timeframe; that
-   one goes in the name and in `timeframe`, and the others are context in the
-   body. "多周期" is not a timeframe and cannot be sorted or filtered.
+   one goes in the name and in `timeframe`; any other timeframe the body
+   leans on is declared in `context_timeframes`, which is also what permits
+   a link to it. "多周期" is not a timeframe and cannot be sorted or filtered.
 2. **Copy the front matter from `_模板/分析.md`** — every key, no additions,
    no renames. Values come from the vault's own vocabularies; do not invent
    field values in another language than the vocabulary uses.
@@ -95,7 +96,7 @@ If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.m
 
 Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256.
 
-Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; its contract is LIVE and exact: `https://tradingsignal.pro/app?market=<market>&symbol=<url-encoded symbol>&timeframe=<tf>&tab=<tab>`, where `tab` is one of `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` and the method decides it (VCP → `vcp`, TD/DeMark → `td9`, Chan → `chan`, Wyckoff → `wyckoff`, support/resistance → `levels`). A link missing any of symbol, timeframe or tab is not a deep link, it is a guess -- the checker refuses it.
+Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; its contract is LIVE and exact: `https://tradingsignal.pro/app?market=<market>&symbol=<url-encoded symbol>&timeframe=<tf>&tab=<tab>`, where `tab` is one of `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` and the method decides it (VCP → `vcp`, TD/DeMark → `td9`, Chan → `chan`, Wyckoff → `wyckoff`, support/resistance → `levels`). A link missing any of market, symbol, timeframe or tab is not a deep link, it is a guess. Complete-but-wrong is worse: the checker also requires the link to open THIS note's instrument -- same symbol, same market, and the note's own decision timeframe or one it declares in `context_timeframes` -- and requires the tab to be the method the link TEXT promises and a method this analysis actually ran. A link that passes a shape check and shows the reader a different chart is the failure this exists to prevent.
 
 **Do not archive a chart that shows something the note does not claim.** If the live chart draws a bar later than the note's `as_of` — a forming bar, or a series that has refreshed since — the image contradicts the note in the one position that claims to be its evidence. Say so and leave the image unarchived.
 

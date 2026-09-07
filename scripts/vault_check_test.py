@@ -31,6 +31,7 @@ body
 ARCHIVED = """---
 analysis_id: cccccc
 symbol: TEST
+market: stock
 timeframe: 1d
 as_of: 2026-09-04
 methods: [td9]
@@ -237,14 +238,68 @@ class VaultCheckPostcondition(unittest.TestCase):
         self.note()
         note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
         note.write_text(note.read_text(encoding="utf-8")
-                        + "\n[查看](https://tradingsignal.pro/app?symbol=TEST&timeframe=1d&tab=demark)\n", encoding="utf-8")
+                        + "\n[查看](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=demark)\n", encoding="utf-8")
         self.assertTrue(any("not a tab the product has" in p for p in check(self.dir)))
 
     def test_a_complete_deep_link_passes(self):
         self.note()
         note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
         note.write_text(note.read_text(encoding="utf-8")
-                        + "\n[查看 TEST 的最新 VCP 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=vcp)\n", encoding="utf-8")
+                        + "\n[查看 TEST 的最新 TD9 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)\n", encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
+
+    def link(self, url, label="查看"):
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8") + f"\n[{label}]({url})\n", encoding="utf-8")
+
+    APP = "https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9"
+
+    def test_a_link_to_ANOTHER_symbol_fails(self):
+        # The worst kind: complete parameters, wrong instrument. A shape
+        # check passes it and the reader is shown a different chart.
+        self.note()
+        self.link(self.APP.replace("symbol=TEST", "symbol=AAPL"))
+        self.assertTrue(any("opens AAPL" in p for p in check(self.dir)))
+
+    def test_a_link_to_ANOTHER_timeframe_fails_unless_declared(self):
+        self.note()
+        self.link(self.APP.replace("timeframe=1d", "timeframe=4h"))
+        self.assertTrue(any("opens 4h" in p for p in check(self.dir)))
+
+    def test_a_declared_context_timeframe_is_allowed(self):
+        # A multi-timeframe study may link its background timeframe -- but
+        # only one it named in front matter.
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        self.note()
+        note.write_text(note.read_text(encoding="utf-8").replace("timeframe: 1d", "timeframe: 1d\ncontext_timeframes: [4h]"), encoding="utf-8")
+        self.link(self.APP.replace("timeframe=1d", "timeframe=4h"))
+        self.assertEqual(check(self.dir), [])
+
+    def test_a_missing_market_fails(self):
+        self.note()
+        self.link(self.APP.replace("market=stock&", ""))
+        self.assertTrue(any("missing market" in p for p in check(self.dir)))
+
+    def test_a_WRONG_market_fails(self):
+        self.note()
+        self.link(self.APP.replace("market=stock", "market=crypto"))
+        self.assertTrue(any("market=crypto" in p for p in check(self.dir)))
+
+    def test_link_text_promising_one_method_with_another_tab_fails(self):
+        # The text is what the reader trusts; the tab is what opens.
+        self.note()
+        self.link(self.APP.replace("tab=td9", "tab=vcp"), label="查看 TEST 的最新 TD9 分析")
+        found = check(self.dir)
+        self.assertTrue(any("promises td9" in p for p in found), found)
+
+    def test_a_method_tab_this_analysis_never_ran_fails(self):
+        self.note()
+        self.link(self.APP.replace("tab=td9", "tab=wyckoff"))
+        self.assertTrue(any("not among this analysis's methods" in p for p in check(self.dir)))
+
+    def test_a_correct_deep_link_passes(self):
+        self.note()
+        self.link(self.APP, label="查看 TEST 的最新 TD9 分析")
         self.assertEqual(check(self.dir), [])
 
     def test_a_missing_vocabulary_fails_closed(self):
