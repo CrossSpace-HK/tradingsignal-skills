@@ -128,3 +128,26 @@ class ReleaseScriptTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VaultSuiteActuallyRuns(unittest.TestCase):
+    """QA's finding: classes appended AFTER `unittest.main()` never ran under
+    the standard direct invocation, so 13 of 18 criteria were decoration.
+    This runs the file the way a human does and counts what executed."""
+
+    def test_direct_invocation_runs_the_whole_suite(self):
+        import re
+        import subprocess
+        import sys
+        from pathlib import Path
+        r = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("vault_check_test.py")), "-v"],
+            capture_output=True, text=True,
+        )
+        out = r.stderr + r.stdout
+        m = re.search(r"Ran (\d+) tests", out)
+        self.assertIsNotNone(m, out[-500:])
+        self.assertGreaterEqual(int(m.group(1)), 18, "the direct run executed fewer criteria than the suite holds")
+        for cls in ("VaultCheck", "VaultCheckProcess", "VaultCheckPostcondition"):
+            self.assertIn(cls, out, f"{cls} did not execute under direct invocation")
+        self.assertEqual(r.returncode, 0, out[-500:])

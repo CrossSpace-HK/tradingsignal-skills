@@ -1,6 +1,7 @@
 """The vault checker has to be able to FAIL, or it is a banner, not a check."""
 import shutil
 import tempfile
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -112,10 +113,6 @@ class VaultCheck(unittest.TestCase):
         self.assertTrue(any("plain-Markdown" in p for p in check(self.dir)))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class VaultCheckProcess(unittest.TestCase):
     """The rules added after the first real skill run drifted on all four."""
 
@@ -165,9 +162,6 @@ class VaultCheckProcess(unittest.TestCase):
         from vault_check import hub_name
         self.assertEqual(hub_name("BTC/USDT"), "BTC-USDT")
         self.assertEqual(hub_name("GBPUSD=X"), "GBPUSD")
-
-
-import hashlib
 
 
 class VaultCheckPostcondition(unittest.TestCase):
@@ -230,3 +224,7 @@ class VaultCheckPostcondition(unittest.TestCase):
         self.note()
         (self.dir / "标签.md").unlink()
         self.assertTrue(any("no 标签.md" in p for p in check(self.dir)))
+
+
+if __name__ == "__main__":
+    unittest.main()
