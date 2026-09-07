@@ -8,7 +8,7 @@ Use this workflow when the user asks to save an analysis for later review, or to
 
 1. Ask once, at the end of an analysis, whether to record it to Obsidian. Do not ask again in the same conversation after a "no".
 2. If yes, ask for the **vault path**. Never guess one, never write into a vault the user has not named, and never create a vault inside another vault's root — a nested vault is indexed twice and the two sets of notes bleed into each other.
-3. Check the path exists and holds `分析/`, `标的/` and `附件/`. If it does not, list what you would create and ask before creating it.
+3. Check the path exists and holds `分析/`, `标的/` and `附件/`. If it does not, list what you would create and ask before creating it. Before writing into an existing vault, verify its shape still matches what you write — in particular that any Dataview column a symbol page asks for exists as a frontmatter field in the analysis template, because the drift renders as an empty column that looks exactly like "no analyses yet" (`scripts/vault_check.py` in this repository is the reference check).
 4. Write only inside `分析/`, `标的/` and `附件/`. Nothing outside those three, ever.
 
 The user must repeat the path in a new conversation unless they have stored it themselves; say so rather than inventing a remembered path.
@@ -64,7 +64,7 @@ Be exact about what an image proves. A screenshot proves the symbol and timefram
 
 To review, read the vault rather than re-deriving from memory:
 
-1. Query `分析/` by tag and front matter for the question asked ("everything I was long that has not played out", "every Fibonacci call that reached 0.618").
+1. Query `分析/` by tag and front matter for the question asked ("everything I was long that has not played out", "every Fibonacci call that reached 0.618"). Keep a plain-Markdown history link on every symbol page — Dataview is an optional enhancement, and a vault without the plugin must still show its history.
 2. For each hit, fetch what the instrument did **after** `as_of`, and compare it against the note's own `invalidation` — not against a target chosen afterwards.
 3. Fill `outcome` and the review section of that note, and add the `结果/*` tag. Leave the original conclusion and reasoning untouched: a record edited to match the outcome cannot be reviewed again.
 4. Report the pattern across notes, not just the last one, and say plainly when the sample is too small to support one.
