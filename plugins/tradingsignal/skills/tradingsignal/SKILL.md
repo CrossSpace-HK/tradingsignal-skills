@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.35"
+  version: "0.1.36"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -38,15 +38,19 @@ Treat the frontmatter `metadata.version` as the installed Skill release. The rep
 An OAuth session lapses, and every tool call then fails. Say so plainly and
 give the ONE command that fixes it for the client actually in use:
 
-- **Codex** — in the terminal: `codex mcp login tradingsignal`
+- **Codex** — in the terminal: `codex mcp login tradingsignal`; or in the
+  desktop app, Settings → MCP servers → tradingsignal → Authenticate, then
+  restart or open a new session.
 - **Claude Code** — in the terminal: `claude mcp login tradingsignal`
 
-Never describe an in-session menu path -- `/mcp` → pick the server →
-Authenticate -- unless you have SEEN that server listed in this session.
-That path is a Claude Code idiom; emitted inside Codex it sends the user to a
-list their client does not show, and they cannot tell a wrong instruction
-from a broken install. Say where the command is typed: the terminal, not the
-chat box. If the client is unknown, give both labelled, and do not guess.
+`/mcp` is a VIEWER, not the authorise button: in Codex it lists the active
+servers and nothing more, so "open `/mcp` → tradingsignal → Authenticate" is
+a Claude Code idiom that sends a Codex user to a control their client does
+not offer. Use it only to check whether the server appears at all. Say where
+the command is typed -- the terminal, not the chat box -- and if the client
+is unknown, give both labelled rather than guessing. From the user's side a
+wrong instruction and a broken install look identical, so being wrong here
+costs them the whole install.
 
 Then stop and wait. Do not continue an analysis on data you could not fetch,
 and do not fill the gap from memory.

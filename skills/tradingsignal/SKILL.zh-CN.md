@@ -32,13 +32,15 @@
 
 OAuth 会过期，过期后所有工具调用都会失败。**直说这件事**，并且**只给当前客户端**那一条能修好它的命令：
 
-- **Codex** —— 在终端里输入：`codex mcp login tradingsignal`
+- **Codex** —— 在终端里输入：`codex mcp login tradingsignal`；或在桌面端
+  **Settings → MCP servers → tradingsignal → Authenticate**，完成后重启或新开会话。
 - **Claude Code** —— 在终端里输入：`claude mcp login tradingsignal`
 
-**不要描述会话内的菜单路径**——`/mcp` → 选服务器 → Authenticate——除非你在**本次会话里真的看到**
-那个服务器出现在列表中。那是 Claude Code 的习惯用法；在 Codex 里说出来，用户会被指向一个
-他的客户端根本不显示的列表，而他分不清是指令错了还是装坏了。**要写清楚在哪里输入**：终端，
-不是聊天框。客户端不确定时，两条都给并各自标注，不要猜。
+**`/mcp` 是查看器，不是授权按钮**：在 Codex 里它只列出当前活跃的 server，所以
+「打开 `/mcp` → tradingsignal → Authenticate」是 Claude Code 的习惯用法，会把 Codex 用户
+指向一个他的客户端根本没有的控件。它只能用来诊断「这个 server 到底出现了没有」。
+**要写清楚在哪里输入**——终端，不是聊天框；客户端不确定时两条都给并各自标注，不要猜。
+从用户角度看，「指令写错」和「装坏了」长得一模一样，所以这里说错，代价是整个安装。
 
 然后**停下来等**。不要用取不到的数据继续分析，也不要凭记忆补上缺口。
 

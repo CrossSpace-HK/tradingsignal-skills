@@ -222,10 +222,19 @@ class ExpiredSessionGuidance(unittest.TestCase):
             for needle in needles:
                 self.assertIn(needle, text, f"{name} is missing '{needle}'")
 
-    def test_the_in_session_menu_path_is_forbidden_unless_seen(self):
+    def test_mcp_is_described_as_a_viewer_not_an_authorise_button(self):
         for name, needle in (
-            ("SKILL.md", "unless you have SEEN that server listed"),
-            ("SKILL.zh-CN.md", "除非你在**本次会话里真的看到**"),
+            ("SKILL.md", "`/mcp` is a VIEWER, not the authorise button"),
+            ("SKILL.zh-CN.md", "**`/mcp` 是查看器，不是授权按钮**"),
+        ):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+    def test_the_desktop_path_is_the_verified_one(self):
+        # Settings -> MCP servers -> Authenticate, confirmed against the CLI
+        # and OpenAI's own documentation. Not /mcp.
+        for name, needle in (
+            ("SKILL.md", "Settings → MCP servers → tradingsignal → Authenticate"),
+            ("SKILL.zh-CN.md", "Settings → MCP servers → tradingsignal → Authenticate"),
         ):
             self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
 
