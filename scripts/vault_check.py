@@ -30,6 +30,12 @@ ANALYSIS_TEMPLATE = Path("_模板") / "分析.md"
 DATAVIEW_BLOCK = re.compile(r"```dataview\n(.*?)```", re.S)
 TABLE_LINE = re.compile(r"^\s*TABLE\s+(.+)$", re.M | re.I)
 
+# One analysis, one name: date, symbol (letters/digits only), the DECISION
+# timeframe, and the analysis id. A multi-timeframe study still decides on
+# one timeframe, and that one goes in the name; "多周期" is not a timeframe
+# and cannot be sorted, filtered or joined against anything.
+ANALYSIS_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[A-Za-z0-9]+-[A-Za-z0-9]+-[0-9a-f]{6}\.md$")
+
 
 def frontmatter_keys(text: str) -> set[str]:
     parts = text.split("---", 2)
@@ -41,6 +47,51 @@ def frontmatter_keys(text: str) -> set[str]:
         if m:
             keys.add(m.group(1))
     return keys
+
+
+def frontmatter_value(text: str, key: str) -> str | None:
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return None
+    m = re.search(rf"^{key}:\s*(.+?)\s*$", parts[1], re.M)
+    return m.group(1).strip("\"'") if m else None
+
+
+def frontmatter_tags(text: str) -> list[str]:
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return []
+    out: list[str] = []
+    in_tags = False
+    for line in parts[1].splitlines():
+        if re.match(r"^tags:", line):
+            in_tags = True
+            continue
+        if in_tags:
+            m = re.match(r"^\s+-\s+(\S+)", line)
+            if m:
+                out.append(m.group(1))
+            elif re.match(r"^\S", line):
+                in_tags = False
+    return out
+
+
+def allowed_tags(vault: Path) -> set[str]:
+    """The controlled vocabulary is 标签.md's code blocks, nothing else."""
+    f = vault / "标签.md"
+    if not f.exists():
+        return set()
+    tags: set[str] = set()
+    for block in re.findall(r"```\n(.*?)```", f.read_text(encoding="utf-8"), re.S):
+        if "dataview" in block or "TABLE" in block:
+            continue
+        tags.update(re.findall(r"[\w\u4e00-\u9fff]+/[\w\u4e00-\u9fff]+", block))
+    return tags
+
+
+def hub_name(symbol: str) -> str:
+    """标的/<this>.md for a symbol: strip the =X venue suffix, / becomes -."""
+    return symbol.replace("=X", "").replace("/", "-")
 
 
 def dataview_columns(text: str) -> list[str]:
@@ -68,11 +119,40 @@ def check(vault: Path) -> list[str]:
     if not template_keys:
         problems.append(f"no analysis template at {ANALYSIS_TEMPLATE}, so Dataview columns cannot be validated")
 
+    vocabulary = allowed_tags(vault)
     for note in sorted((vault / "分析").glob("*.md")):
-        keys = frontmatter_keys(note.read_text(encoding="utf-8"))
+        text = note.read_text(encoding="utf-8")
+        keys = frontmatter_keys(text)
         missing = [k for k in REQUIRED_ANALYSIS_KEYS if k not in keys]
         if missing:
             problems.append(f"分析/{note.name}: frontmatter is missing {', '.join(missing)}")
+
+        if not ANALYSIS_FILENAME.match(note.name):
+            problems.append(
+                f"分析/{note.name}: the name is not <date>-<SYMBOL>-<timeframe>-<id>.md; "
+                f"an unsortable name cannot be filtered or joined at review time"
+            )
+
+        # The two-layer model is only a model if BOTH layers exist: an
+        # analysis whose symbol has no hub page answers "what did I think
+        # that day" while "what do I think now" silently has nowhere to live.
+        symbol = frontmatter_value(text, "symbol")
+        if symbol:
+            hub = vault / "标的" / f"{hub_name(symbol)}.md"
+            if not hub.exists():
+                problems.append(f"分析/{note.name}: no hub page 标的/{hub_name(symbol)}.md for {symbol}; the living layer is missing")
+            else:
+                links = hub.read_text(encoding="utf-8").count(f"[[分析/{note.stem}")
+                if links == 0:
+                    problems.append(f"标的/{hub_name(symbol)}.md: no history link to 分析/{note.stem}; the hub cannot find this analysis")
+                elif links > 1:
+                    problems.append(f"标的/{hub_name(symbol)}.md: {links} links to 分析/{note.stem}; the upsert is not idempotent")
+
+        # Free-form tags are worthless a year later; only 标签.md counts.
+        if vocabulary:
+            for tag in frontmatter_tags(text):
+                if tag not in vocabulary:
+                    problems.append(f"分析/{note.name}: tag `{tag}` is not in 标签.md's controlled vocabulary")
 
     known = {"file", "date"} | template_keys  # Dataview's own implicit fields stay legal
     for page in sorted(list((vault / "标的").glob("*.md")) + list((vault / "_模板").glob("*.md"))):

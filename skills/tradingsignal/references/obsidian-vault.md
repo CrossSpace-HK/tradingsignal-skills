@@ -20,6 +20,43 @@ The user must repeat the path in a new conversation unless they have stored it t
 
 A single layer loses one of "what do I think now" and "what did I think then". Review needs both.
 
+## The write procedure — the same every time
+
+The first real run through a chat client drifted on four of these at once
+(invented filename, invented tags, no hub page, embedded live charts), so the
+procedure is numbered and none of its steps is optional or reorderable:
+
+1. **Derive the identity.** `analysis_id` = 6 lowercase hex characters, stable
+   for this analysis. Filename = `YYYY-MM-DD-<SYMBOL>-<timeframe>-<id>.md`
+   where `<SYMBOL>` is the symbol with `=X` dropped and every non-alphanumeric
+   removed (`BTC/USDT` → `BTCUSDT`), and `<timeframe>` is the **decision
+   timeframe**. A multi-timeframe study still decides on one timeframe; that
+   one goes in the name and in `timeframe`, and the others are context in the
+   body. "多周期" is not a timeframe and cannot be sorted or filtered.
+2. **Copy the front matter from `_模板/分析.md`** — every key, no additions,
+   no renames. Values come from the vault's own vocabularies; do not invent
+   field values in another language than the vocabulary uses.
+3. **Tags only from `标签.md`.** If the analysis needs a tag the vocabulary
+   lacks, propose the addition there — never mint one in a note.
+4. **Upsert the hub page, always.** `标的/<hub>.md` where `<hub>` is the
+   symbol with `=X` dropped and `/` replaced by `-`. If it does not exist,
+   create it from `_模板/标的.md` with the derived fact tags. Either way, add
+   a plain-Markdown link to the new analysis under `## 历史分析`, and update
+   `现在的看法`, `current_bias` and `updated`. The upsert is IDEMPOTENT: a
+   link that already exists is not added again, and re-saving the same
+   analysis must leave the hub with one link, not two. An analysis without its hub answers "what
+   did I think that day" while "what do I think now" silently has nowhere to
+   live — this is the step the first real run skipped.
+5. **Images per the chart rules above**: archived PNG with SHA-256 when the
+   evidence chain closes, otherwise no image; live chart URLs go under
+   `## 链接` as `liveUrl` lines, never as inline embeds in the body.
+6. **Run the postcondition and fix before finishing.** All four artefacts of
+   one save must exist and agree: the analysis front matter, the attachments
+   with their hashes, the hub page, and the hub's link back to the analysis.
+   The reference implementation is `scripts/vault_check.py` in this
+   repository. If any part fails, report **"未完整保存"** and say which part
+   -- never tell the user the analysis is in Obsidian when it half is.
+
 ## What goes in the front matter
 
 Machine-readable fields carry the review queries, so they must be facts, not prose:
