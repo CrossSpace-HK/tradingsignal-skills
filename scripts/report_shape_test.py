@@ -200,8 +200,8 @@ class TwoSurfacesForCharts(unittest.TestCase):
 
     def test_the_vault_surface_REQUIRES_embeds(self):
         for name, needles in (
-            ("references/obsidian-vault.md", ("Two surfaces, opposite rules", "EMBEDDED in the body", "Archiving is the DEFAULT")),
-            ("references/obsidian-vault.zh-CN.md", ("两个界面，规则相反", "嵌在正文里", "归档是默认动作")),
+            ("references/obsidian-vault.md", ("Two surfaces, opposite rules", "EMBEDDED in the body", "Archiving is REQUIRED", "DEGRADED record")),
+            ("references/obsidian-vault.zh-CN.md", ("两个界面，规则相反", "嵌在正文里", "归档是必须项", "降级记录")),
         ):
             text = (SKILL / name).read_text(encoding="utf-8")
             for needle in needles:

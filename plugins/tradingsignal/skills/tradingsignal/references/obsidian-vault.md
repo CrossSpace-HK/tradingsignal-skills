@@ -55,12 +55,17 @@ procedure is numbered and none of its steps is optional or reorderable:
    product's latest analysis for that symbol/timeframe/method. A note whose
    evidence is a bare URL is a note nobody can read at a glance -- which is
    the whole reason the vault exists.
-   Archiving is the DEFAULT, not an option: take the chart with the product's
-   screenshot action and store it. Skip it only when the evidence chain
-   genuinely cannot close -- the live chart draws a bar later than the note's
-   `as_of`, or no logged-in browser is available -- and then say so with the
-   未归档 marker and record what is missing. "I did not archive" is a fact to
-   state, never a default to fall into.
+   Archiving is REQUIRED, not an option: a save the user asked for owes at
+   least one real analysis chart -- archived, hash-verified, embedded, with
+   its method link directly beneath. Each image's link must match THAT
+   image: the slot's method and, when the caption names a timeframe, that
+   timeframe. A 4h chart may not carry a 1d link.
+   When the evidence chain genuinely cannot close -- the live chart draws a
+   bar later than the note's `as_of`, or no logged-in browser is available --
+   the note is still written, with the 未归档 marker and what is missing, but
+   it is a DEGRADED record and must be reported as **未完整保存**. Do not
+   tell the user the analysis is in Obsidian; tell them what is missing and
+   what would complete it.
    Live chart URLs still go under `## 链接` as `liveUrl` lines, because they
    open TODAY's data and are not the frozen evidence.
 6. **Run the postcondition and fix before finishing.** One save's artefacts

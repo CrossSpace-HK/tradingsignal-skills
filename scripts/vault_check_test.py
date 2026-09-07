@@ -14,18 +14,23 @@ from vault_check import check
 ANALYSIS = """---
 analysis_id: aaaaaa
 symbol: TEST
+market: stock
 timeframe: 1d
 as_of: 2026-09-04
 methods: [td9]
 bias: 看多
 outcome: 待观察
-image_archived: false
+image_archived: true
+image_sha256s:
+  td9: {td9}
 tags:
   - 市场/股票
 ---
 body
 
-图片未归档。
+![[附件/aaaaaa-td9.png]]
+
+[查看 TEST 的最新 TD9 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)
 """
 
 ARCHIVED = """---
@@ -45,6 +50,10 @@ tags:
   - 市场/股票
 ---
 body
+
+![[附件/cccccc-td9.png]]
+
+[查看 TEST 的最新 TD9 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)
 """
 
 TEMPLATE = """---
@@ -86,7 +95,10 @@ class VaultCheck(unittest.TestCase):
         for d in ("分析", "标的", "附件", "_模板"):
             (self.dir / d).mkdir()
         (self.dir / "_模板" / "分析.md").write_text(TEMPLATE, encoding="utf-8")
-        (self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md").write_text(ANALYSIS, encoding="utf-8")
+        png = b"a png, for hashing purposes"
+        (self.dir / "附件" / "aaaaaa-td9.png").write_bytes(png)
+        (self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md").write_text(
+            ANALYSIS.format(td9=hashlib.sha256(png).hexdigest()), encoding="utf-8")
         (self.dir / "标的" / "TEST.md").write_text(SYMBOL_PAGE, encoding="utf-8")
         (self.dir / "标签.md").write_text(TAGS_PAGE, encoding="utf-8")
 
@@ -126,7 +138,7 @@ class VaultCheckProcess(unittest.TestCase):
         for d in ("分析", "标的", "附件", "_模板"):
             (self.dir / d).mkdir()
         (self.dir / "_模板" / "分析.md").write_text(TEMPLATE, encoding="utf-8")
-        (self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md").write_text(ANALYSIS, encoding="utf-8")
+        (self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md").write_text(ANALYSIS.format(td9="0" * 64), encoding="utf-8")
         (self.dir / "标的" / "TEST.md").write_text(SYMBOL_PAGE, encoding="utf-8")
         (self.dir / "标签.md").write_text(TAGS_PAGE, encoding="utf-8")
 
@@ -135,13 +147,13 @@ class VaultCheckProcess(unittest.TestCase):
 
     def test_the_eth_filename_shape_fails(self):
         # "多周期" is not a timeframe and the id is missing -- the real case.
-        (self.dir / "分析" / "2026-09-07-ETHUSDT-多周期.md").write_text(ANALYSIS.replace("TEST", "ETHX"), encoding="utf-8")
+        (self.dir / "分析" / "2026-09-07-ETHUSDT-多周期.md").write_text(ANALYSIS.format(td9="0" * 64).replace("TEST", "ETHX"), encoding="utf-8")
         (self.dir / "标的" / "ETHX.md").write_text(SYMBOL_PAGE.replace("TEST", "ETHX").replace("2026-09-04-ETHX-1d-aaaaaa", "2026-09-07-ETHUSDT-多周期"), encoding="utf-8")
         self.assertTrue(any("unsortable" in p for p in check(self.dir)), check(self.dir))
 
     def test_an_analysis_without_a_hub_page_fails(self):
         # Leon's report: the ETH analysis landed and 标的/ gained nothing.
-        (self.dir / "分析" / "2026-09-05-NEWX-1d-bbbbbb.md").write_text(ANALYSIS.replace("TEST", "NEWX"), encoding="utf-8")
+        (self.dir / "分析" / "2026-09-05-NEWX-1d-bbbbbb.md").write_text(ANALYSIS.format(td9="0" * 64).replace("TEST", "NEWX"), encoding="utf-8")
         self.assertTrue(any("living layer is missing" in p for p in check(self.dir)))
 
     def test_a_hub_without_the_backlink_fails(self):
@@ -301,6 +313,43 @@ class VaultCheckPostcondition(unittest.TestCase):
         self.note()
         self.link(self.APP, label="查看 TEST 的最新 TD9 分析")
         self.assertEqual(check(self.dir), [])
+
+    def test_an_unarchived_note_is_reported_as_an_incomplete_save(self):
+        # Stating the gap makes the record honest; it does not make the
+        # save complete. QA's rule after the Owner saw a note with no image.
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(ARCHIVED.format(main=self.hash, td9=self.hash)
+                        .replace("image_archived: true", "image_archived: false") + "\n未归档。\n", encoding="utf-8")
+        self.assertTrue(any("未完整保存" in p for p in check(self.dir)))
+
+    def test_an_archived_image_that_is_never_embedded_fails(self):
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        self.note()
+        note.write_text(note.read_text(encoding="utf-8").replace("![[附件/cccccc-td9.png]]", ""), encoding="utf-8")
+        self.assertTrue(any("never embedded" in p for p in check(self.dir)))
+
+    def test_an_embedded_image_without_a_link_beneath_it_fails(self):
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        self.note()
+        text = note.read_text(encoding="utf-8")
+        note.write_text(text.replace("[查看 TEST 的最新 TD9 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)", ""), encoding="utf-8")
+        self.assertTrue(any("no method link directly beneath" in p for p in check(self.dir)))
+
+    def test_the_link_under_an_image_must_open_that_image_method(self):
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        self.note()
+        text = note.read_text(encoding="utf-8").replace("tab=td9)", "tab=vcp)").replace("最新 TD9 分析", "最新 VCP 分析")
+        note.write_text(text.replace("methods: [td9]", "methods: [td9, vcp]"), encoding="utf-8")
+        self.assertTrue(any("but the image draws td9" in p for p in check(self.dir)))
+
+    def test_a_4h_caption_may_not_carry_a_1d_link(self):
+        # QA: each chart link matches its OWN slot and caption.
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        self.note()
+        text = note.read_text(encoding="utf-8").replace(
+            "![[附件/cccccc-td9.png]]", "![[附件/cccccc-td9.png|TEST 4h TD9]]")
+        note.write_text(text.replace("timeframe: 1d", "timeframe: 1d\ncontext_timeframes: [4h]"), encoding="utf-8")
+        self.assertTrue(any("caption says 4h" in p for p in check(self.dir)))
 
     def test_a_missing_vocabulary_fails_closed(self):
         self.note()

@@ -61,6 +61,13 @@ METHOD_WORDS: list[tuple[re.Pattern[str], str]] = [
 
 # Which markets each asset class may name, so a link cannot open the right
 # symbol under the wrong tab group.
+# An Obsidian save SHOWS its evidence. `![[附件/x.png]]` is the embed; the
+# link that must sit under it names the same method the image draws.
+EMBED = re.compile(r"!\[\[附件/([^\]|]+?)(?:\|[^\]]*)?\]\]")
+METHOD_TABS = {"vcp", "td9", "chan", "wyckoff", "levels", "fib"}
+TF_WORDS = re.compile(r"\b(1m|5m|15m|30m|1h|2h|4h|1d|1w|1mo)\b|(\d+)\s*小时|日线|周线|月线")
+TF_ZH = {"日线": "1d", "周线": "1w", "月线": "1mo"}
+
 MARKET_FOR_CLASS = {
     "equity_us": "stock", "equity_intl": "stock", "crypto": "crypto",
     "fx": "forex", "commodity_spot": "commodity", "commodity_future": "commodity",
@@ -292,9 +299,47 @@ def check(vault: Path) -> list[str]:
                     problems.append(f"分析/{note.name}: image_sha256s declares `{slot}` but 附件/{f} does not exist")
                 elif actual[f] != want:
                     problems.append(f"分析/{note.name}: 附件/{f} does not match its declared SHA-256; the image has been replaced or corrupted")
+            # An archived image must be SHOWN, and the link under it must
+            # open the method that image draws. A picture the reader has to
+            # go looking for is not evidence in a note.
+            embedded = {m for m in EMBED.findall(text)}
+            declared_files = {f"{aid}-{slot}.png" for slot in declared_hashes(text) if slot != "image_sha256"}
+            for name in sorted(files):
+                if name in declared_files and name not in embedded:
+                    problems.append(f"分析/{note.name}: 附件/{name} is declared and archived but never embedded; an Obsidian note shows its evidence")
+                elif name not in declared_files and name not in embedded:
+                    # Neither declared nor shown: a leftover from an earlier
+                    # save. Named rather than deleted -- this vault is not
+                    # versioned, so removing evidence is not mine to do.
+                    problems.append(f"分析/{note.name}: 附件/{name} is in the vault but this note neither declares nor embeds it; declare it or remove it")
+            lines = text.splitlines()
+            for i, line in enumerate(lines):
+                m = EMBED.search(line)
+                if not m:
+                    continue
+                slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
+                near = " ".join(lines[i + 1:i + 4])
+                links = [u or b for _, u, b in APP_LINK.findall(near)]
+                if not links:
+                    problems.append(f"分析/{note.name}: the image {m.group(1)} has no method link directly beneath it")
+                    continue
+                q = parse_qs(urlparse(links[0]).query)
+                if slot in METHOD_TABS and q.get("tab", [""])[0] != slot:
+                    problems.append(f"分析/{note.name}: the link under {m.group(1)} opens tab={q.get('tab', [''])[0]}, but the image draws {slot}")
+                # A caption naming a timeframe binds the link to it: a 4h
+                # image may not carry a 1d link.
+                cap = TF_WORDS.search(line)
+                if cap and q.get("timeframe"):
+                    want = cap.group(1) or (f"{cap.group(2)}h" if cap.group(2) else TF_ZH.get(cap.group(0), ""))
+                    if want and q["timeframe"][0] != want:
+                        problems.append(f"分析/{note.name}: the image caption says {want} but its link opens {q['timeframe'][0]}")
         elif archived == "false":
             if "未归档" not in text:
                 problems.append(f"分析/{note.name}: image_archived is false but the body never says 未归档; the evidence gap must be stated, not implied")
+            # Stating the gap makes the record HONEST; it does not make the
+            # save complete. A vault write the user asked for owes at least
+            # one archived, embedded, linked chart.
+            problems.append(f"分析/{note.name}: 未完整保存 — no chart archived; an Obsidian save owes at least one embedded, hash-verified image with its method link")
 
     known = {"file", "date"} | template_keys  # Dataview's own implicit fields stay legal
     for page in sorted(list((vault / "标的").glob("*.md")) + list((vault / "_模板").glob("*.md"))):
