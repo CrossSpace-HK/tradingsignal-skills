@@ -16,6 +16,7 @@ analysis_id: aaaaaa
 symbol: TEST
 market: stock
 timeframe: 1d
+skill_version: 0.1.30
 as_of: 2026-09-04
 methods: [td9]
 bias: 看多
@@ -38,6 +39,7 @@ analysis_id: cccccc
 symbol: TEST
 market: stock
 timeframe: 1d
+skill_version: 0.1.30
 as_of: 2026-09-04
 methods: [td9]
 bias: 看多
@@ -61,6 +63,7 @@ analysis_id:
 symbol: 
 timeframe: 
 as_of: 
+skill_version: 
 methods: []
 bias: 
 outcome: 
@@ -117,6 +120,12 @@ class VaultCheck(unittest.TestCase):
     def test_a_missing_directory_fails(self):
         shutil.rmtree(self.dir / "附件")
         self.assertTrue(any("附件" in p for p in check(self.dir)))
+
+    def test_an_analysis_without_a_skill_version_fails(self):
+        # QA: without it the note cannot select the methodology it used.
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md"
+        note.write_text(note.read_text(encoding="utf-8").replace("skill_version: 0.1.30\n", ""), encoding="utf-8")
+        self.assertTrue(any("skill_version" in p for p in check(self.dir)))
 
     def test_an_analysis_missing_review_fields_fails(self):
         note = self.dir / "分析" / "2026-09-04-TEST-1d-aaaaaa.md"
@@ -426,6 +435,23 @@ class VaultCheckPostcondition(unittest.TestCase):
         note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
         note.write_text(note.read_text(encoding="utf-8").replace(
             "![[附件/cccccc-td9.png]]", "## 结论\n\n![[附件/cccccc-td9.png]]"), encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
+
+    def test_a_version_with_no_index_entry_is_reported_as_unresolvable(self):
+        # Present but meaningless: the note names a release the methodology
+        # index has never seen, so no definition can be selected for it.
+        self.note()
+        (self.dir / "方法").mkdir(exist_ok=True)
+        (self.dir / "方法" / "版本索引.json").write_text(
+            '{"td9": {"0.1.29": "TD9.md"}}', encoding="utf-8")
+        found = check(self.dir)
+        self.assertTrue(any("has no entry for" in p for p in found), found)
+
+    def test_a_version_the_index_knows_resolves_cleanly(self):
+        self.note()
+        (self.dir / "方法").mkdir(exist_ok=True)
+        (self.dir / "方法" / "版本索引.json").write_text(
+            '{"td9": {"0.1.30": "TD9.md"}}', encoding="utf-8")
         self.assertEqual(check(self.dir), [])
 
     def test_a_missing_vocabulary_fails_closed(self):

@@ -52,6 +52,36 @@ def note_path(vault: Path, topic: str) -> Path:
     return vault / "方法" / f"{FILENAME[topic]}.md"
 
 
+def index_path(vault: Path) -> Path:
+    return vault / "方法" / "版本索引.json"
+
+
+def load_index(vault: Path) -> dict[str, dict[str, str]]:
+    p = index_path(vault)
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+
+
+def save_index(vault: Path, idx: dict[str, dict[str, str]]) -> None:
+    index_path(vault).write_text(json.dumps(idx, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def resolve(vault: Path, topic: str, version: str) -> Path | None:
+    """Which file holds what `version` meant by `topic`?
+
+    EVERY release the sync has seen gets an entry, including releases whose
+    text was identical to the one before. Without that, the chain QA found
+    breaks: V1 creates, V2 bumps with no snapshot, V3 changes and snapshots
+    the outgoing file as `TOPIC-V2.md` -- and an analysis stamped V1 resolves
+    to nothing, even though V1's definition is preserved inside that very
+    file. Identical text is still a distinct release identity.
+    """
+    target = load_index(vault).get(topic, {}).get(version)
+    if not target:
+        return None
+    p = vault / "方法" / target
+    return p if p.exists() else None
+
+
 def needed(vault: Path, version: str) -> list[str]:
     """Topics whose note is missing or written by another release."""
     out = []
@@ -78,21 +108,28 @@ def render(topic: str, version: str, body: str, updated: str) -> str:
 def sync(vault: Path, version: str, fetched: dict[str, str], updated: str) -> dict[str, str]:
     """Apply the fetched texts. Returns what happened, per topic."""
     (vault / "方法").mkdir(parents=True, exist_ok=True)
+    idx = load_index(vault)
     result: dict[str, str] = {}
     for topic, body in fetched.items():
         if topic not in TOPICS:
             result[topic] = "refused: not a topic this skill serves"
             continue
         p = note_path(vault, topic)
+        here = idx.setdefault(topic, {})
+        current_name = f"{FILENAME[topic]}.md"
         if not p.exists():
             p.write_text(render(topic, version, body, updated), encoding="utf-8")
+            here[version] = current_name
             result[topic] = "created"
             continue
         old = p.read_text(encoding="utf-8")
         old_version = _front(old, "skill_version") or "unknown"
         if _body(old).split("\n\n", 1)[-1].strip() == body.strip():
-            # Same definition under a new release: bump, do not snapshot.
+            # Same definition under a new release: bump, do not snapshot --
+            # but the release still gets an index entry, pointing at the same
+            # file, so it stays addressable.
             p.write_text(render(topic, version, body, updated), encoding="utf-8")
+            here[version] = current_name
             result[topic] = "unchanged (version bumped)"
             continue
         hist = vault / "方法" / "历史"
@@ -100,8 +137,16 @@ def sync(vault: Path, version: str, fetched: dict[str, str], updated: str) -> di
         snap = hist / f"{FILENAME[topic]}-{old_version}.md"
         if not snap.exists():                       # immutable once written
             snap.write_text(old, encoding="utf-8")
+        # Every release that pointed at the CURRENT file was pointing at the
+        # text now frozen in this snapshot, so they all follow it. This is
+        # what keeps an older, identical release resolvable.
+        for v, target in list(here.items()):
+            if target == current_name:
+                here[v] = f"历史/{snap.name}"
+        here[version] = current_name
         p.write_text(render(topic, version, body, updated), encoding="utf-8")
         result[topic] = f"changed (snapshot {snap.name})"
+    save_index(vault, idx)
     return result
 
 

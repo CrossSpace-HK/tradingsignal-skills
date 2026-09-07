@@ -27,7 +27,10 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 REQUIRED_DIRS = ["分析", "标的", "附件"]
-REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags"]
+# `skill_version` is required: without it an analysis cannot choose which
+# methodology definition it was made under, which is the whole point of
+# keeping the history (QA's finding).
+REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags", "skill_version"]
 ANALYSIS_TEMPLATE = Path("_模板") / "分析.md"
 DATAVIEW_BLOCK = re.compile(r"```dataview\n(.*?)```", re.S)
 TABLE_LINE = re.compile(r"^\s*TABLE\s+(.+)$", re.M | re.I)
@@ -319,6 +322,22 @@ def check(vault: Path) -> list[str]:
         note_class = frontmatter_value(text, "asset_class")
         context_tfs = {t.strip() for t in (frontmatter_value(text, "context_timeframes") or "").strip("[]").split(",") if t.strip()}
         note_methods = {m.strip() for m in (frontmatter_value(text, "methods") or "").strip("[]").split(",") if m.strip()}
+
+        # The version must RESOLVE, not merely be present. Only once the
+        # vault has an index -- before the first methodology sync there is
+        # nothing to resolve against, and demanding it would be noise.
+        note_version = frontmatter_value(text, "skill_version")
+        idx_file = vault / "方法" / "版本索引.json"
+        if note_version and note_version != "null" and idx_file.exists():
+            import json as _json
+            idx = _json.loads(idx_file.read_text(encoding="utf-8"))
+            for topic in sorted(note_methods):
+                if topic in idx and note_version not in idx[topic]:
+                    problems.append(
+                        f"分析/{note.name}: skill_version {note_version} has no entry for `{topic}`;"
+                        f" this analysis cannot be read against the definition it used"
+                    )
+
 
         for label, url, bare in APP_LINK.findall(text):
             link, why_text = (url, label) if url else (bare, "")

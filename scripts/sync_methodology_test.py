@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "tradingsignal" / "scripts"))
-from sync_methodology import TOPICS, needed, note_path, sync  # noqa: E402
+from sync_methodology import TOPICS, needed, note_path, resolve, sync  # noqa: E402
 from vault_check import check_methods, packaged_skill_version  # noqa: E402
 
 V1, V2 = "0.1.31", "0.1.32"
@@ -75,6 +75,27 @@ class MethodologySync(unittest.TestCase):
         sync(self.dir, V1, dict(self.texts, vcp="three"), "2026-09-08")
         sync(self.dir, V2, dict(self.texts, vcp="four"), "2026-09-09")
         self.assertEqual(snap.read_text(encoding="utf-8"), before)
+
+    def test_QA_chain_v1_created_v2_unchanged_v3_changed_all_resolve(self):
+        """The counterexample: V2 bumped with no snapshot, then V3 changed.
+        V1 and V2 must BOTH still resolve to the definition they used."""
+        V3 = "0.1.33"
+        sync(self.dir, V1, self.texts, "2026-09-01")
+        sync(self.dir, V2, self.texts, "2026-09-02")              # identical text
+        sync(self.dir, V3, dict(self.texts, vcp="RELEASE THREE"), "2026-09-03")
+
+        for v in (V1, V2):
+            got = resolve(self.dir, "vcp", v)
+            self.assertIsNotNone(got, f"{v} resolves to nothing")
+            self.assertIn("release one", got.read_text(encoding="utf-8"),
+                          f"{v} resolved to the wrong definition")
+        now = resolve(self.dir, "vcp", V3)
+        self.assertIsNotNone(now)
+        self.assertIn("RELEASE THREE", now.read_text(encoding="utf-8"))
+
+    def test_an_unknown_release_resolves_to_nothing_rather_than_the_newest(self):
+        sync(self.dir, V1, self.texts, "2026-09-01")
+        self.assertIsNone(resolve(self.dir, "vcp", "0.0.1"))
 
     def test_a_topic_the_skill_does_not_serve_is_refused(self):
         out = sync(self.dir, V1, {"astrology": "no"}, "2026-09-07")
