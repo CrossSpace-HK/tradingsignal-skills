@@ -50,12 +50,16 @@ procedure is numbered and none of its steps is optional or reorderable:
 5. **Images per the chart rules above**: archived PNG with SHA-256 when the
    evidence chain closes, otherwise no image; live chart URLs go under
    `## 链接` as `liveUrl` lines, never as inline embeds in the body.
-6. **Run the postcondition and fix before finishing.** All four artefacts of
-   one save must exist and agree: the analysis front matter, the attachments
-   with their hashes, the hub page, and the hub's link back to the analysis.
-   The reference implementation is `scripts/vault_check.py` in this
-   repository. If any part fails, report **"未完整保存"** and say which part
-   -- never tell the user the analysis is in Obsidian when it half is.
+6. **Run the postcondition and fix before finishing.** One save's artefacts
+   must exist and agree: the analysis front matter, the hub page, the hub's
+   link back to the analysis, and the image contract's ACTIVE arm --
+   `image_archived: true` means every declared attachment exists with a
+   matching SHA-256; `image_archived: false` means no attachment is owed,
+   but the body must state the gap with the marker **未归档** rather than
+   imply it. No section title may appear twice in one note. The reference
+   implementation is `scripts/vault_check.py` in this repository. If any
+   part fails, report **"未完整保存"** and say which part -- never tell the
+   user the analysis is in Obsidian when it half is.
 
 ## What goes in the front matter
 

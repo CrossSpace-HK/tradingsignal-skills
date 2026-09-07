@@ -20,6 +20,7 @@ Usage: vault_check.py <vault-path>   (exit 0 clean, 1 problems, 2 not a vault)
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -94,6 +95,29 @@ def hub_name(symbol: str) -> str:
     return symbol.replace("=X", "").replace("/", "-")
 
 
+def declared_hashes(text: str) -> dict[str, str]:
+    """Every SHA-256 the frontmatter declares: the single value and the map."""
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        return {}
+    out: dict[str, str] = {}
+    single = frontmatter_value(text, "image_sha256")
+    if single and re.fullmatch(r"[0-9a-f]{64}", single):
+        out["image_sha256"] = single
+    in_map = False
+    for line in parts[1].splitlines():
+        if re.match(r"^image_sha256s:", line):
+            in_map = True
+            continue
+        if in_map:
+            m = re.match(r"^\s+(\w+):\s*([0-9a-f]{64})\s*$", line)
+            if m:
+                out[m.group(1)] = m.group(2)
+            elif re.match(r"^\S", line):
+                in_map = False
+    return out
+
+
 def dataview_columns(text: str) -> list[str]:
     cols: list[str] = []
     for block in DATAVIEW_BLOCK.findall(text):
@@ -113,6 +137,12 @@ def check(vault: Path) -> list[str]:
             problems.append(f"missing directory: {d}/")
     if problems:
         return problems
+
+    # FAIL CLOSED on a missing vocabulary: with no 标签.md every tag would
+    # pass, which reads as "all tags are fine" when the truth is "nothing
+    # was checked" (QA's finding on the first version of this rule).
+    if not (vault / "标签.md").exists():
+        problems.append("no 标签.md: the tag vocabulary cannot be enforced, so no tag can be trusted")
 
     template = vault / ANALYSIS_TEMPLATE
     template_keys = frontmatter_keys(template.read_text(encoding="utf-8")) if template.exists() else set()
@@ -153,6 +183,39 @@ def check(vault: Path) -> list[str]:
             for tag in frontmatter_tags(text):
                 if tag not in vocabulary:
                     problems.append(f"分析/{note.name}: tag `{tag}` is not in 标签.md's controlled vocabulary")
+
+        # No section title twice. The real case: a save appended a second
+        # `## 链接`, and each half then told a different story about the
+        # same question.
+        heads = re.findall(r"^## .+$", text, re.M)
+        for h in sorted({h for h in heads if heads.count(h) > 1}):
+            problems.append(f"分析/{note.name}: the section `{h.strip()}` appears {heads.count(h)} times; one question, one section")
+
+        # The image contract is CONDITIONAL, and both arms are checked --
+        # `image_archived: true` with no attachment check was a postcondition
+        # in name only (QA's finding).
+        archived = frontmatter_value(text, "image_archived")
+        aid = frontmatter_value(text, "analysis_id")
+        if archived == "true" and aid:
+            files = {f.name: f for f in (vault / "附件").glob(f"{aid}-*.png")}
+            if not files:
+                problems.append(f"分析/{note.name}: image_archived is true but 附件/ holds no {aid}-*.png")
+            actual = {name: hashlib.sha256(f.read_bytes()).hexdigest() for name, f in files.items()}
+            for slot, want in declared_hashes(text).items():
+                if slot == "image_sha256":
+                    # The single hash names the PRIMARY image; it must be one
+                    # of this analysis's real files, whichever slot it is.
+                    if want not in actual.values():
+                        problems.append(f"分析/{note.name}: image_sha256 matches none of this analysis's attachments")
+                    continue
+                f = f"{aid}-{slot}.png"
+                if f not in actual:
+                    problems.append(f"分析/{note.name}: image_sha256s declares `{slot}` but 附件/{f} does not exist")
+                elif actual[f] != want:
+                    problems.append(f"分析/{note.name}: 附件/{f} does not match its declared SHA-256; the image has been replaced or corrupted")
+        elif archived == "false":
+            if "未归档" not in text:
+                problems.append(f"分析/{note.name}: image_archived is false but the body never says 未归档; the evidence gap must be stated, not implied")
 
     known = {"file", "date"} | template_keys  # Dataview's own implicit fields stay legal
     for page in sorted(list((vault / "标的").glob("*.md")) + list((vault / "_模板").glob("*.md"))):

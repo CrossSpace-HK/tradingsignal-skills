@@ -14,6 +14,27 @@ as_of: 2026-09-04
 methods: [td9]
 bias: 看多
 outcome: 待观察
+image_archived: false
+tags:
+  - 市场/股票
+---
+body
+
+图片未归档。
+"""
+
+ARCHIVED = """---
+analysis_id: cccccc
+symbol: TEST
+timeframe: 1d
+as_of: 2026-09-04
+methods: [td9]
+bias: 看多
+outcome: 待观察
+image_archived: true
+image_sha256: {main}
+image_sha256s:
+  td9: {td9}
 tags:
   - 市场/股票
 ---
@@ -144,3 +165,68 @@ class VaultCheckProcess(unittest.TestCase):
         from vault_check import hub_name
         self.assertEqual(hub_name("BTC/USDT"), "BTC-USDT")
         self.assertEqual(hub_name("GBPUSD=X"), "GBPUSD")
+
+
+import hashlib
+
+
+class VaultCheckPostcondition(unittest.TestCase):
+    """QA's three false closures: each arm of the image contract, the
+    duplicated section, and the vocabulary failing OPEN when 标签.md is gone."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        for d in ("分析", "标的", "附件", "_模板"):
+            (self.dir / d).mkdir()
+        (self.dir / "_模板" / "分析.md").write_text(TEMPLATE, encoding="utf-8")
+        (self.dir / "标的" / "TEST.md").write_text(
+            SYMBOL_PAGE.replace("2026-09-04-TEST-1d-aaaaaa", "2026-09-04-TEST-1d-cccccc"), encoding="utf-8")
+        (self.dir / "标签.md").write_text(TAGS_PAGE, encoding="utf-8")
+        self.png = b"not really a png but bytes are bytes"
+        (self.dir / "附件" / "cccccc-td9.png").write_bytes(self.png)
+        self.hash = hashlib.sha256(self.png).hexdigest()
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
+
+    def note(self, main=None, td9=None):
+        (self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md").write_text(
+            ARCHIVED.format(main=main or self.hash, td9=td9 or self.hash), encoding="utf-8")
+
+    def test_archived_with_matching_hashes_passes(self):
+        self.note()
+        self.assertEqual(check(self.dir), [])
+
+    def test_archived_with_a_missing_attachment_fails(self):
+        self.note()
+        (self.dir / "附件" / "cccccc-td9.png").unlink()
+        found = check(self.dir)
+        self.assertTrue(any("does not exist" in p or "holds no" in p for p in found), found)
+
+    def test_archived_with_a_wrong_hash_fails(self):
+        # The image was replaced underneath its declaration.
+        self.note(td9="0" * 64)
+        self.assertTrue(any("replaced or corrupted" in p for p in check(self.dir)))
+
+    def test_the_single_hash_must_name_a_real_attachment(self):
+        self.note(main="1" * 64)
+        self.assertTrue(any("matches none" in p for p in check(self.dir)))
+
+    def test_unarchived_must_say_so_in_the_body(self):
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(ARCHIVED.format(main=self.hash, td9=self.hash)
+                        .replace("image_archived: true", "image_archived: false")
+                        .replace("image_sha256: " + self.hash, "image_sha256: null"), encoding="utf-8")
+        self.assertTrue(any("未归档" in p for p in check(self.dir)))
+
+    def test_a_duplicated_section_fails(self):
+        # The real ETH case: a save appended a second `## 链接`.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8") + "\n## 链接\n\na\n\n## 链接\n\nb\n", encoding="utf-8")
+        self.assertTrue(any("one question, one section" in p for p in check(self.dir)))
+
+    def test_a_missing_vocabulary_fails_closed(self):
+        self.note()
+        (self.dir / "标签.md").unlink()
+        self.assertTrue(any("no 标签.md" in p for p in check(self.dir)))
