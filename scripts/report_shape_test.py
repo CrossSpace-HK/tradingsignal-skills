@@ -189,5 +189,24 @@ class ChartLinksAreReadable(unittest.TestCase):
             self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
 
 
+class TwoSurfacesForCharts(unittest.TestCase):
+    """The Owner drew the line himself: links in chat, embedded images in
+    Obsidian. Stating one rule without the other is how the last version
+    produced a note with no pictures in it."""
+
+    def test_the_chat_surface_forbids_embeds(self):
+        for name, needle in (("SKILL.md", "never an inline image embed"), ("SKILL.zh-CN.md", "不用行内图片嵌入")):
+            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+    def test_the_vault_surface_REQUIRES_embeds(self):
+        for name, needles in (
+            ("references/obsidian-vault.md", ("Two surfaces, opposite rules", "EMBEDDED in the body", "Archiving is the DEFAULT")),
+            ("references/obsidian-vault.zh-CN.md", ("两个界面，规则相反", "嵌在正文里", "归档是默认动作")),
+        ):
+            text = (SKILL / name).read_text(encoding="utf-8")
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+
 if __name__ == "__main__":
     unittest.main()

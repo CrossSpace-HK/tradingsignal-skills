@@ -48,9 +48,21 @@ procedure is numbered and none of its steps is optional or reorderable:
    analysis must leave the hub with one link, not two. An analysis without its hub answers "what
    did I think that day" while "what do I think now" silently has nowhere to
    live — this is the step the first real run skipped.
-5. **Images per the chart rules above**: archived PNG with SHA-256 when the
-   evidence chain closes, otherwise no image; live chart URLs go under
-   `## 链接` as `liveUrl` lines, never as inline embeds in the body.
+5. **Images: a vault note SHOWS the chart.** This surface is the opposite of
+   a chat reply, and the two must not be confused. Obsidian renders local
+   images, so an archived chart is EMBEDDED in the body with `![[附件/...]]`,
+   at the reason it supports, with a readable text link underneath it to the
+   product's latest analysis for that symbol/timeframe/method. A note whose
+   evidence is a bare URL is a note nobody can read at a glance -- which is
+   the whole reason the vault exists.
+   Archiving is the DEFAULT, not an option: take the chart with the product's
+   screenshot action and store it. Skip it only when the evidence chain
+   genuinely cannot close -- the live chart draws a bar later than the note's
+   `as_of`, or no logged-in browser is available -- and then say so with the
+   未归档 marker and record what is missing. "I did not archive" is a fact to
+   state, never a default to fall into.
+   Live chart URLs still go under `## 链接` as `liveUrl` lines, because they
+   open TODAY's data and are not the frozen evidence.
 6. **Run the postcondition and fix before finishing.** One save's artefacts
    must exist and agree: the analysis front matter, the hub page, the hub's
    link back to the analysis, and the image contract's ACTIVE arm --
@@ -93,6 +105,13 @@ Read the vault's own `标签.md` and use only the tags it lists. Free-form tags 
 If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.md` rather than inventing one in a note.
 
 ## Charts
+
+**Two surfaces, opposite rules.** In a CHAT reply (Codex, Claude) an image
+cannot render, so a chart travels as a named text link and never as an embed.
+In an OBSIDIAN note the image renders, so the archived chart is embedded in
+the body AND carries a text link beneath it. Applying the chat rule to a note
+produces a wall of URLs; applying the note rule to a chat produces broken
+placeholders. Decide by surface, every time.
 
 Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256.
 
