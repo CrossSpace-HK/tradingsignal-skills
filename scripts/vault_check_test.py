@@ -393,6 +393,15 @@ class VaultCheckPostcondition(unittest.TestCase):
         note.write_text(text.replace("tab=vcp", "tab=indicators"), encoding="utf-8")
         self.assertEqual(check(self.dir), [])
 
+    def test_an_image_pooled_under_the_links_section_fails(self):
+        # The Owner's point: one analysis may hold several charts, each
+        # sitting with the method it belongs to -- not collected at the end.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        text = note.read_text(encoding="utf-8").replace("![[附件/cccccc-td9.png]]", "")
+        note.write_text(text + "\n## 链接\n\n![[附件/cccccc-td9.png]]\n\n[查看](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=td9)\n", encoding="utf-8")
+        self.assertTrue(any("pooled with the links" in p for p in check(self.dir)))
+
     def test_a_missing_vocabulary_fails_closed(self):
         self.note()
         (self.dir / "标签.md").unlink()

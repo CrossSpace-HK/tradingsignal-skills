@@ -52,7 +52,12 @@ procedure is numbered and none of its steps is optional or reorderable:
    a chat reply, and the two must not be confused. Obsidian renders local
    images, so an archived chart is EMBEDDED in the body with `![[附件/...]]`,
    at the reason it supports, with a readable text link underneath it to the
-   product's latest analysis for that symbol/timeframe/method. A note whose
+   product's latest analysis for that symbol/timeframe/method. ONE ANALYSIS
+   MAY HOLD SEVERAL CHARTS -- one per method it ran -- and each sits in the
+   section it belongs to: the VCP chart under the VCP reasoning, the TD9
+   chart under the TD9 reasoning. Do not pool them at the end under `## 链接`;
+   that section is for links, and a picture filed there is a picture nobody
+   reads beside the sentence it proves. A note whose
    evidence is a bare URL is a note nobody can read at a glance -- which is
    the whole reason the vault exists.
    Archiving is REQUIRED, not an option: a save the user asked for owes at

@@ -328,9 +328,16 @@ def check(vault: Path) -> list[str]:
                     # versioned, so removing evidence is not mine to do.
                     problems.append(f"分析/{note.name}: 附件/{name} is in the vault but this note neither declares nor embeds it; declare it or remove it")
             lines = text.splitlines()
+            # Where does the links section start? Images belong with the
+            # reason they support; a picture filed under 链接 is a picture
+            # nobody reads next to the sentence it proves.
+            link_section = next((i for i, l in enumerate(lines) if l.strip().startswith("## 链接")), len(lines))
             for i, line in enumerate(lines):
                 m = EMBED.search(line)
                 if not m:
+                    continue
+                if i > link_section:
+                    problems.append(f"分析/{note.name}: {m.group(1)} is embedded under 链接; an image belongs at the reason it supports, not pooled with the links")
                     continue
                 slot = m.group(1).rsplit("-", 1)[-1].removesuffix(".png")
                 near = " ".join(lines[i + 1:i + 4])
