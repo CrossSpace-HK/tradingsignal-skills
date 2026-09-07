@@ -56,10 +56,13 @@ procedure is numbered and none of its steps is optional or reorderable:
    `image_archived: true` means every declared attachment exists with a
    matching SHA-256; `image_archived: false` means no attachment is owed,
    but the body must state the gap with the marker **未归档** rather than
-   imply it. No section title may appear twice in one note. The reference
-   implementation is `scripts/vault_check.py` in this repository. If any
-   part fails, report **"未完整保存"** and say which part -- never tell the
-   user the analysis is in Obsidian when it half is.
+   imply it. No section title may appear twice in one note. RUN the checker that
+   ships WITH this skill -- `scripts/vault_check.py` inside the skill's own
+   directory: `python3 <skill-dir>/scripts/vault_check.py <vault-path>`. Do
+   not improvise a substitute check; the first Codex run did, declared PASS,
+   and missed a guessed link the real checker refuses. If any part fails,
+   report **"未完整保存"** and say which part -- never tell the user the
+   analysis is in Obsidian when it half is.
 
 ## What goes in the front matter
 
@@ -92,7 +95,7 @@ If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.m
 
 Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256.
 
-Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; it follows the product's URL contract, and until that contract ships, leave the link out rather than guessing its parameters.
+Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; its contract is LIVE and exact: `https://tradingsignal.pro/app?market=<market>&symbol=<url-encoded symbol>&timeframe=<tf>&tab=<tab>`, where `tab` is one of `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` and the method decides it (VCP → `vcp`, TD/DeMark → `td9`, Chan → `chan`, Wyckoff → `wyckoff`, support/resistance → `levels`). A link missing any of symbol, timeframe or tab is not a deep link, it is a guess -- the checker refuses it.
 
 **Do not archive a chart that shows something the note does not claim.** If the live chart draws a bar later than the note's `as_of` — a forming bar, or a series that has refreshed since — the image contradicts the note in the one position that claims to be its evidence. Say so and leave the image unarchived.
 

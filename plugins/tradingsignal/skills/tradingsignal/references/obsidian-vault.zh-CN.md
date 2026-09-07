@@ -45,8 +45,11 @@
    分析 frontmatter、标的页、标的页指回本篇的链接，以及图片合同**生效的那一侧**——
    `image_archived: true` 时每个声明的附件都存在且 SHA-256 相符；`false` 时不欠附件，
    但正文必须用「**未归档**」明说缺口，不能靠暗示。同一篇里章节标题不得重复。
-   参考实现是本仓库的 `scripts/vault_check.py`。任何一样不成立就明确报
-   「**未完整保存**」并说明缺哪样——绝不能在只写了一半时告诉用户分析已进 Obsidian。
+   **运行随本 skill 打包的 checker**——skill 目录内的 `scripts/vault_check.py`：
+   `python3 <skill目录>/scripts/vault_check.py <vault路径>`。不要临时拼替代检查——
+   第一次 Codex 运行就是这么做的，自称 PASS，漏掉了一条真 checker 会拒绝的猜测链接。
+   任何一样不成立就明确报「**未完整保存**」并说明缺哪样——
+   绝不能在只写了一半时告诉用户分析已进 Obsidian。
 
 ## frontmatter 写什么
 
@@ -81,7 +84,11 @@ data_staleness_days             # 序列落后时，as_of 与今天的差
 
 每张归档图下方放一条可读文字链接，指向产品里**同标的/同周期/同方法的最新分析**——
 `[查看 ETH/USDT 的最新 VCP 分析](...)`——让冻结的记录和活的视图一键互达。这是方法页 URL，
-不是图表 URL；它遵循产品的 URL 契约，契约发布前宁可不放，也不要猜参数。
+不是图表 URL；契约**已上线且精确**：
+`https://tradingsignal.pro/app?market=<市场>&symbol=<URL编码的symbol>&timeframe=<周期>&tab=<tab>`，
+`tab` 取 `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` 之一，由方法决定
+（VCP → `vcp`、TD/DeMark → `td9`、缠论 → `chan`、威科夫 → `wyckoff`、支撑阻力 → `levels`）。
+缺 symbol、timeframe 或 tab 任何一项的链接不是深链，是猜测——checker 会拒绝。
 
 **图上画的东西如果超出笔记的说法，就不要归档。** 实时图里画出比 `as_of` 更晚的 K 线（正在形成的那根，或者序列已经刷新过），这张图就在「本篇证据」这个位置上和笔记自相矛盾。说明情况，把图留空。
 

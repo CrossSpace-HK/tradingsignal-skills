@@ -24,6 +24,7 @@ import hashlib
 import re
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 REQUIRED_DIRS = ["分析", "标的", "附件"]
 REQUIRED_ANALYSIS_KEYS = ["analysis_id", "symbol", "timeframe", "as_of", "bias", "outcome", "tags"]
@@ -36,6 +37,13 @@ TABLE_LINE = re.compile(r"^\s*TABLE\s+(.+)$", re.M | re.I)
 # one timeframe, and that one goes in the name; "多周期" is not a timeframe
 # and cannot be sorted, filtered or joined against anything.
 ANALYSIS_FILENAME = re.compile(r"^\d{4}-\d{2}-\d{2}-[A-Za-z0-9]+-[A-Za-z0-9]+-[0-9a-f]{6}\.md$")
+
+# The product's method-page URL contract, live since task #45 shipped: an
+# /app link names its chart completely or it is not a deep link. A link
+# without `tab=` opens whatever the default is -- which is how the first
+# Codex run produced a "view the VCP analysis" link that did not open VCP.
+APP_TABS = {"indicators", "levels", "trend", "fib", "chan", "td9", "vcp", "wyckoff"}
+APP_LINK = re.compile(r"https?://[^\s)\]>]*?/app\?[^\s)\]>]*")
 
 
 def frontmatter_keys(text: str) -> set[str]:
@@ -194,6 +202,17 @@ def check(vault: Path) -> list[str]:
         # The image contract is CONDITIONAL, and both arms are checked --
         # `image_archived: true` with no attachment check was a postcondition
         # in name only (QA's finding).
+        # Every /app link is judged against the LIVE URL contract: symbol,
+        # timeframe and a tab from the closed set, or it silently opens some
+        # other view while its text promises a method (QA's NVDA case).
+        for link in APP_LINK.findall(text):
+            q = parse_qs(urlparse(link).query)
+            missing_q = [k for k in ("symbol", "timeframe", "tab") if k not in q]
+            if missing_q:
+                problems.append(f"分析/{note.name}: /app link missing {', '.join(missing_q)}; without them it is not a deep link, it is a guess")
+            elif q["tab"][0] not in APP_TABS:
+                problems.append(f"分析/{note.name}: /app link tab `{q['tab'][0]}` is not a tab the product has")
+
         archived = frontmatter_value(text, "image_archived")
         aid = frontmatter_value(text, "analysis_id")
         if archived == "true" and aid:

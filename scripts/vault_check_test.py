@@ -5,6 +5,10 @@ import hashlib
 import unittest
 from pathlib import Path
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "tradingsignal" / "scripts"))
 from vault_check import check
 
 ANALYSIS = """---
@@ -219,6 +223,29 @@ class VaultCheckPostcondition(unittest.TestCase):
         note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
         note.write_text(note.read_text(encoding="utf-8") + "\n## 链接\n\na\n\n## 链接\n\nb\n", encoding="utf-8")
         self.assertTrue(any("one question, one section" in p for p in check(self.dir)))
+
+    def test_an_app_link_without_a_tab_fails(self):
+        # QA's NVDA case: a "view the VCP analysis" link that opens the
+        # default view because it never named a tab.
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8")
+                        + "\n[查看最新分析](https://tradingsignal.pro/app?symbol=TEST&timeframe=1d)\n", encoding="utf-8")
+        self.assertTrue(any("not a deep link" in p for p in check(self.dir)))
+
+    def test_an_app_link_with_an_unknown_tab_fails(self):
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8")
+                        + "\n[查看](https://tradingsignal.pro/app?symbol=TEST&timeframe=1d&tab=demark)\n", encoding="utf-8")
+        self.assertTrue(any("not a tab the product has" in p for p in check(self.dir)))
+
+    def test_a_complete_deep_link_passes(self):
+        self.note()
+        note = self.dir / "分析" / "2026-09-04-TEST-1d-cccccc.md"
+        note.write_text(note.read_text(encoding="utf-8")
+                        + "\n[查看 TEST 的最新 VCP 分析](https://tradingsignal.pro/app?market=stock&symbol=TEST&timeframe=1d&tab=vcp)\n", encoding="utf-8")
+        self.assertEqual(check(self.dir), [])
 
     def test_a_missing_vocabulary_fails_closed(self):
         self.note()
