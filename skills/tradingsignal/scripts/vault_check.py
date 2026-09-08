@@ -436,7 +436,15 @@ def check(vault: Path) -> list[str]:
         for label, url, bare in APP_LINK.findall(text):
             link, why_text = (url, label) if url else (bare, "")
             q = parse_qs(urlparse(link).query)
-            missing_q = [k for k in ("market", "symbol", "timeframe", "tab") if k not in q]
+            # `market` is NOT required, because the product does not emit it and
+            # does not read it: `appDeepLink` writes symbol/timeframe/tab (plus
+            # the snapshot fields), and `/app` derives the market from the
+            # symbol through `viewFor`. Demanding it here failed 18 links that
+            # the product itself had just produced -- the checker was asserting
+            # a contract the product does not have, which is the same shape of
+            # drift as the `levels`/`fib` methodology topics. When a link DOES
+            # carry `market`, it is still checked for agreement below.
+            missing_q = [k for k in ("symbol", "timeframe", "tab") if k not in q]
             if missing_q:
                 problems.append(f"分析/{note.name}: /app link missing {', '.join(missing_q)}; without them it is not a deep link, it is a guess")
                 continue
@@ -449,9 +457,9 @@ def check(vault: Path) -> list[str]:
             # check and shows the reader a different chart.
             if symbol and unquote(q["symbol"][0]) != symbol:
                 problems.append(f"分析/{note.name}: /app link opens {unquote(q['symbol'][0])}, but this analysis is about {symbol}")
-            if note_market and q["market"][0] != note_market:
+            if "market" in q and note_market and q["market"][0] != note_market:
                 problems.append(f"分析/{note.name}: /app link says market={q['market'][0]}, the note says {note_market}")
-            elif note_class and MARKET_FOR_CLASS.get(note_class) and q["market"][0] != MARKET_FOR_CLASS[note_class]:
+            elif "market" in q and note_class and MARKET_FOR_CLASS.get(note_class) and q["market"][0] != MARKET_FOR_CLASS[note_class]:
                 problems.append(f"分析/{note.name}: /app link says market={q['market'][0]}, but asset_class {note_class} belongs to {MARKET_FOR_CLASS[note_class]}")
 
             # The decision timeframe, or one this note DECLARES as context.

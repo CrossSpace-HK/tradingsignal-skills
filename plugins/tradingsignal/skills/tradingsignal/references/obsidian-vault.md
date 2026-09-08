@@ -27,19 +27,36 @@ The first real run through a chat client drifted on four of these at once
 procedure is numbered and none of its steps is optional or reorderable:
 
 1. **Derive the identity.** `analysis_id` = 6 lowercase hex characters, stable
-   for this analysis. Filename = `YYYY-MM-DD-<SYMBOL>-<timeframe>-<id>.md`
-   where `<SYMBOL>` is the symbol with `=X` dropped and every non-alphanumeric
-   removed (`BTC/USDT` → `BTCUSDT`), and `<timeframe>` is the **decision
-   timeframe**. A multi-timeframe study still decides on one timeframe; that
-   one goes in the name and in `timeframe`; any other timeframe the body
-   leans on is declared in `context_timeframes`, which is also what permits
-   a link to it. "多周期" is not a timeframe and cannot be sorted or filtered.
-2. **Copy the front matter from `_模板/分析.md`** — every key, no additions,
+   for this analysis, **in the front matter** — attachments are bound to the
+   note by it, so it cannot be dropped.
+   **Filename = `YYYY-MM-DD <SYMBOL> <timeframe> <status>.md`**, e.g.
+   `2026-09-08 NVDA 1d 待观察.md`. `<SYMBOL>` is the symbol with `=X` dropped
+   and every non-alphanumeric removed (`BTC/USDT` → `BTCUSDT`); `<timeframe>`
+   is the **decision timeframe** -- a multi-timeframe study still decides on
+   one, that one goes in the name and in `timeframe`, and any other the body
+   leans on is declared in `context_timeframes`, which is also what permits a
+   link to it. "多周期" is not a timeframe and cannot be sorted or filtered.
+   `<status>` is the `status` value.
+   **`analysis_id` does NOT go in the filename.** It exists so a machine can
+   bind attachments; in the filename it becomes a run of hex nobody can read,
+   and the filename is what Obsidian shows in its sidebar -- it is how a human
+   finds their own analysis again. Append ` <id>` ONLY when that day already
+   holds the same symbol, timeframe and status; that is a collision, not the
+   default shape.
+2. **`symbol` holds the product's canonical spelling, never an abbreviation.**
+   `BTC/USDT`, not `BTC`; `BRK-B`, not `BRK`. An abbreviation loses
+   information -- BTC against USDT, USD and USDC are three different series --
+   and the deep links carry the canonical form, so shortening it makes the
+   note disagree with its own links and the checker reports "the link opens X
+   but this analysis is about Y" for every one of them. The hub name derives
+   from the same canonical spelling: drop `=X`, replace `/` with `-`
+   (`BTC/USDT` → `BTC-USDT`).
+3. **Copy the front matter from `_模板/分析.md`** — every key, no additions,
    no renames. Values come from the vault's own vocabularies; do not invent
    field values in another language than the vocabulary uses.
-3. **Tags only from `标签.md`.** If the analysis needs a tag the vocabulary
+4. **Tags only from `标签.md`.** If the analysis needs a tag the vocabulary
    lacks, propose the addition there — never mint one in a note.
-4. **Upsert the hub page, always.** `标的/<hub>.md` where `<hub>` is the
+5. **Upsert the hub page, always.** `标的/<hub>.md` where `<hub>` is the
    symbol with `=X` dropped and `/` replaced by `-`. If it does not exist,
    create it from `_模板/标的.md` with the derived fact tags. Either way, add
    a plain-Markdown link to the new analysis under `## 历史分析`, and update
@@ -48,7 +65,7 @@ procedure is numbered and none of its steps is optional or reorderable:
    analysis must leave the hub with one link, not two. An analysis without its hub answers "what
    did I think that day" while "what do I think now" silently has nowhere to
    live — this is the step the first real run skipped.
-5. **Images: a vault note SHOWS the chart.** This surface is the opposite of
+6. **Images: a vault note SHOWS the chart.** This surface is the opposite of
    a chat reply, and the two must not be confused. Obsidian renders local
    images, so an archived chart is EMBEDDED in the body with `![[附件/...]]`,
    at the reason it supports, with a readable text link underneath it to the
@@ -84,7 +101,7 @@ procedure is numbered and none of its steps is optional or reorderable:
    what would complete it.
    Live chart URLs still go under `## 链接` as `liveUrl` lines, because they
    open TODAY's data and are not the frozen evidence.
-6. **Run the postcondition and fix before finishing.** One save's artefacts
+7. **Run the postcondition and fix before finishing.** One save's artefacts
    must exist and agree: the analysis front matter, the hub page, the hub's
    link back to the analysis, and the image contract's ACTIVE arm --
    `image_archived: true` means every declared attachment exists with a
@@ -164,12 +181,23 @@ If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.m
 
 ## Charts
 
-**Two surfaces, opposite rules.** In a CHAT reply (Codex, Claude) an image
-cannot render, so a chart travels as a named text link and never as an embed.
-In an OBSIDIAN note the image renders, so the archived chart is embedded in
-the body AND carries a text link beneath it. Applying the chat rule to a note
-produces a wall of URLs; applying the note rule to a chat produces broken
-placeholders. Decide by surface, every time.
+**Decide by surface, not by habit.** There is one question: *will this surface
+fetch a remote image by itself?*
+
+- **Surfaces that render** (an Obsidian note; any chat box that displays remote
+  images): **embed it**. The snapshot URL already IS a PNG, so embedding shows
+  the chart without the reader clicking anything.
+- **Surfaces that do not** (Codex, Claude Code, any terminal or plain-text
+  reply): **a named text link, never an embed** — an embed there leaves a
+  broken placeholder exactly where the evidence was claimed to be.
+
+Applying the chat rule to a note produces a wall of URLs; applying the note
+rule to a surface that cannot render produces a row of broken frames.
+
+**What Obsidian archives is the LIGHT chart.** The product mints charts light
+by default (`theme=light`) because a note is a white page, and a dark chart
+embedded in one looks broken. Dark has to be asked for, and archiving is not
+the place to ask.
 
 Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256. **`image_archived` is a required field and must be exactly `true` or `false`** — deleting it does not exempt a note from the image contract, it reports 未完整保存. **Put each embed on its OWN line**, with its own link beneath it: two images on one line cannot each have a link directly under them, and each is still checked separately. **Every image the body embeds must be declared in `image_sha256s` under its own slot** — the declaration is what binds those bytes to this note, so an embed nobody declared is a picture with no provenance and fails. It must also be this analysis's own file: the name starts with this note's `analysis_id`, never another note's.
 
