@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.45"
+  version: "0.1.46"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -83,7 +83,11 @@ The image captions itself with symbol, timeframe and the bar it is drawn to, and
 
 Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, `vcp`, `levels`, or `signals`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
 
-**The signals chart leads.** `get_indicators` returns one: the indicators currently taking a side, drawn on the price, at most two per category and six in all. It answers "which readings are bullish, which are bearish, and where is each one saying it" in a single picture, so it goes ABOVE the method charts — those show one method's internals, this shows the conclusion. It narrows with the readings: filter by `categories` or `side` and the image shows the same subset. It is drawn on the last closed bar and carries its own `barTs`; when that differs from the readings' `barTs`, the latest bar is still forming, so name the bar you mean.
+**Two charts lead, and `get_indicators` returns both.** `chart` is the main technical picture: 均线 / MACD / RSI always drawn, plus up to three more chosen by `notability`, six overlays in all. `trendChart` is the composite 0-100 trend strength, signed by direction, with the no-trend band drawn. Both go ABOVE the method charts — those show one method's internals, these show the conclusion. The main chart narrows with the readings (`categories`, `side`); the trend chart never narrows, because the strength is a composition over every contributor and a filtered one would not be that number. Both are drawn on the last closed bar and carry their own `barTs`; when that differs from the readings' `barTs`, the latest bar is still forming, so name the bar you mean.
+
+**Being on the chart is not the same as taking a side.** 均线, MACD and RSI are pinned there whatever they read. `notable` says what was drawn, marks the pinned ones `core: true`, and gives a `why` for each of the others; `signal` is what says bullish or bearish. Write which ones are actually decisive — never let the picture imply agreement it does not have.
+
+**Rank with `notability`, do not eyeball it.** Every reading carries `notability` (0-100) and `barsSinceFlip`. The score combines how recently the indicator changed its mind with how rarely it takes this side at all, so a reading held for sixty bars ranks below one that fired three bars ago, and a pattern or divergence that fires in 5% of bars ranks above both. When you name "the important bullish and bearish signals", take them in that order rather than by whichever you happened to read first.
 
 Keep the answer conclusion-first. State explicitly when no setup qualifies; never manufacture actions to fill a list.
 
@@ -91,7 +95,7 @@ Keep the answer conclusion-first. State explicitly when no setup qualifies; neve
 
 Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, with the matching chart immediately after the bullet it supports:
 
-1. **Signals** — trend strength, the resonance count, and the decisive readings that drive it, with the signals chart. This bullet comes first because it is the picture the reader actually looks at.
+1. **Signals** — trend strength (score, direction, and whether it clears the no-trend threshold), the resonance count, and the decisive readings that drive it, ranked by `notability`. Put the main chart and the trend-strength chart here. This bullet comes first because these are the pictures the reader actually looks at.
 2. **Entry** — the price or the condition that would trigger one.
 3. **Exit** — the target, and the invalidation that ends the idea.
 4. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.

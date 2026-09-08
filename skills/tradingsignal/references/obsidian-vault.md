@@ -95,11 +95,12 @@ procedure is numbered and none of its steps is optional or reorderable:
    its method link directly beneath. Each image's link must match THAT
    image: the slot's method and, when the caption names a timeframe, that
    timeframe. A 4h chart may not carry a 1d link.
-   The signals chart from `get_indicators` -- the bullish and bearish readings
-   drawn on the price -- is the note's LEAD image: it goes under `## 指标`
-   (slot `indicators`), above the method sections, because it pictures the
-   conclusion rather than one method's internals. Its method link is the
-   `indicators` tab, which is where the product shows the same readings.
+   The two charts from `get_indicators` are the note's LEAD images: the main
+   technical chart (均线 / MACD / RSI plus the most notable readings) under
+   `## 指标` (slot `indicators`), and the trend-strength chart under `## 趋势`
+   (slot `trend`). Both go above the method sections, because they picture the
+   conclusion rather than one method's internals. Their method links are the
+   `indicators` and `trend` tabs, where the product shows the same readings.
    The slot names the method, from a closed set -- `levels, vcp, chan, td9,
    wyckoff, fib, trend, indicators` -- and the file is `附件/<id>-<slot>.png`.
    A slot outside that set (`main`, anything new) has no implied method, so

@@ -25,16 +25,30 @@ reason each gives**. `side: "decisive"` keeps only those actually taking one,
 which is usually the real question -- not "what does everything say" but
 "which of them is saying anything right now".
 
-`get_indicators` also returns `chart`: the decisive readings drawn on the
-price, so the reader can see *where* each one is saying it. **This is the
-lead image of the analysis** -- it belongs above every method chart, because
-it is the picture of the conclusion rather than of one method's internals.
-Pass your own one-line view as `conclusion` and it is printed on the image.
-The chart narrows with the list: filter by `categories` or `side` and the
-image shows the same subset, so it can never claim more than the text.
-It is drawn on the last closed bar and reports its own `barTs`; if that
+`get_indicators` also returns TWO pictures, and both lead the analysis, above
+every method chart -- they show the conclusion, a method chart shows one
+method's internals. `chart` is the main technical picture: 均线 / MACD / RSI
+always drawn, plus up to three more chosen by `notability`, six in all.
+`trendChart` is the composite trend strength, signed by direction, with the
+no-trend band drawn. Pass your own one-line view as `conclusion` and it is
+printed on both.
+
+The main chart narrows with the list -- filter by `categories` or `side` and
+it shows the same subset, so it can never claim more than the text. The trend
+chart does not narrow: the strength is a composition over every contributor,
+and a filtered one would not be that number.
+
+Both are drawn on the last closed bar and report their own `barTs`; if that
 differs from the readings' `barTs`, the latest bar is still forming -- say
 which one you mean rather than letting the two pass as the same.
+
+**Rank the readings by `notability`, and never let a pinned chart line pass
+for agreement.** Every reading carries `notability` (0-100) and
+`barsSinceFlip`: recency of the last change of mind, combined with how rarely
+that indicator takes this side at all. `notable` lists what was drawn, marks
+the pinned three `core: true`, and gives a `why` for the rest. 均线, MACD and
+RSI appear on the chart whatever they read, so state which readings are
+actually decisive.
 
 **Leave Wyckoff out when it has no clear reading.** The engine states its own
 limit: the side is decided only by the direction of the leg before the range,
