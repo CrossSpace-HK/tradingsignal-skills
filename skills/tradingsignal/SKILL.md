@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.48"
+  version: "0.1.49"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -74,52 +74,42 @@ and do not fill the gap from memory.
 
 ## Evidence contract
 
-For every decision-relevant reason, return the claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and the matching module chart URL. Put the chart URL immediately after its reason.
+Rationale for every rule here, and the failures each one came from, is in [output contract](references/output-contract.md). Read it when a rule looks wrong for your case; the rules themselves are binding without it.
 
-Give every chart as a markdown link whose TEXT names the chart in words — `[查看 ETH/USDT 4小时 TD9 图](url)`, never a naked signed URL and never an inline image embed (`![](...)`). Chat clients do not reliably fetch remote images, and a broken placeholder then sits in exactly the position that claims to be the evidence; a long signed URL in the open is unreadable noise the user cannot tell apart from garbage. The link text carries symbol, timeframe and method, so the reader knows what they are opening before they click.
-
-Two different links, never conflated: a **chart URL** opens a picture; a **method-page URL** opens the product's live, interactive analysis for that symbol, timeframe and method. Offer the method page when the user wants "the latest analysis", the chart when the sentence's evidence is the picture. **Never build the method-page link yourself**: every chart the tools return carries `openIn`, which opens the app at the same symbol, timeframe, method AND the same bar the analysis ran to, with the snapshot it was drawn from. A hand-built URL loses the snapshot, so the reader lands on live prices while the sentence beside it describes a different moment.
-
-Pass `conclusion` when you ask for a chart (`get_indicators`, `get_method_analysis`, `get_chart`, `get_levels`): one line, at most 80 characters, **your** reading rather than an engine's — it is printed at the top of the image. The picture then states the same thing as the prose beside it. Do not restate an engine's raw output there ("TD9 count is 9"); the number is already in the chart.
-
-The image captions itself with symbol, timeframe and the bar it is drawn to, and it is drawn from the exact bars the analysis ran on. When the history behind a chart has since moved, the image says so itself. So do not paraphrase the caption as if you had checked it, and do not claim a chart matches the analysis's other inputs — the check covers that symbol's own bar series at that timeframe, nothing else.
-
-Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, `vcp`, `levels`, or `signals`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
-
-**Two charts lead, and `get_indicators` returns both.** `chart` is the main technical picture: 均线 / MACD / RSI always drawn, plus up to three more chosen by `notability`, six overlays in all. `trendChart` is the composite 0-100 trend strength, signed by direction, with the no-trend band drawn. Both go ABOVE the method charts — those show one method's internals, these show the conclusion. The main chart narrows with the readings (`categories`, `side`); the trend chart never narrows, because the strength is a composition over every contributor and a filtered one would not be that number. Both are drawn on the last closed bar and carry their own `barTs`; when that differs from the readings' `barTs`, the latest bar is still forming, so name the bar you mean.
-
-**Being on the chart is not the same as taking a side.** 均线, MACD and RSI are pinned there whatever they read. `notable` says what was drawn, marks the pinned ones `core: true`, and gives a `why` for each of the others; `signal` is what says bullish or bearish. Write which ones are actually decisive — never let the picture imply agreement it does not have.
-
-**Rank with `notability`, do not eyeball it.** Every reading carries `notability` (0-100) and `barsSinceFlip`. The score combines how recently the indicator changed its mind with how rarely it takes this side at all, so a reading held for sixty bars ranks below one that fired three bars ago, and a pattern or divergence that fires in 5% of bars ranks above both. When you name "the important bullish and bearish signals", take them in that order rather than by whichever you happened to read first.
-
-Keep the answer conclusion-first. State explicitly when no setup qualifies; never manufacture actions to fill a list.
-
-**The conclusion carries only what has a clear reading.** Keep it short: the view, and the evidence that actually decided it. A method whose engine has nothing to say does not go in the conclusion, and does not get a paragraph of its own either — see "When not to write about a method" in `references/obsidian-vault.md` for what each engine's "nothing to say" looks like. Do not write the omission as a line ("Wyckoff and VCP show no clear conclusion"); a sentence shaped like a finding, reporting no finding, is the padding this rule exists to remove. If the user asked about that method directly, answer in one clause with the reason.
+- Every decision-relevant reason returns: claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and that module's chart URL immediately after the reason.
+- Charts are markdown links whose TEXT names symbol, timeframe and method — `[查看 ETH/USDT 4小时 TD9 图](url)`. Never a naked URL, never an image embed (`![](...)`): chat clients do not reliably fetch remote images.
+- **Chart URL ≠ method-page URL.** The chart is a picture; the method page is the live interactive analysis. Never build the method-page link yourself — use the `openIn` the tools return, which carries the bar and snapshot the analysis ran on.
+- Pass `conclusion` to any tool that returns a chart (`get_indicators`, `get_method_analysis`, `get_chart`, `get_levels`): one line, ≤80 chars, **your** reading, not an engine reading.
+- The image captions itself and says for itself when the history behind it has moved. Do not paraphrase that caption as if you had checked it, and do not claim the chart matches the analysis's other inputs — the check covers that symbol's own bars at that timeframe only.
+- Use the chart `get_method_analysis` returns; otherwise `get_chart` with the matching preset (`price`, `chan`, `td9`, `wyckoff`, `vcp`, `levels`, `signals`, `trend`). Say when a chart is contextual rather than the evidence itself.
+- **Two charts lead.** `get_indicators` returns both: `chart` (均线/MACD/RSI pinned + up to three by `notability`, six overlays) and `trendChart` (composite 0-100 strength, signed, with the no-trend band). Both go above the method charts. The main chart narrows with `categories`/`side`; the trend chart never narrows. Both are drawn on the last closed bar and carry their own `barTs` — when it differs from the readings' `barTs`, the last bar is still forming, so name the bar you mean.
+- **Drawn ≠ decisive.** 均线, MACD and RSI are pinned whatever they read. `notable` says what was drawn and marks pinned ones `core: true`; `signal` is what says bullish or bearish. Name the decisive ones explicitly.
+- `get_indicators` returns `readings` columnar: `readings.fields` names the columns, each category holds rows in that order. A null `notability`/`barsSinceFlip` cell means the reading is not taking a side.
+- **Rank by `notability`, not by reading order.** It combines recency of the last change of mind with how rarely that indicator takes this side.
+- Conclusion-first, and the conclusion carries only what has a clear reading. A method whose engine has nothing to say gets no paragraph and no line saying it was omitted — see "When not to write about a method" in [obsidian vault](references/obsidian-vault.md). Answer in one clause only if asked about that method directly.
+- State explicitly when no setup qualifies; never manufacture actions to fill a list.
 
 ## Report shape
 
-Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, with the matching chart immediately after the bullet it supports:
+Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, each followed by the chart that shows what it claims:
 
-1. **Signals** — trend strength (score, direction, and whether it clears the no-trend threshold), the resonance count, and the decisive readings that drive it, ranked by `notability`. Put the main chart and the trend-strength chart here. This bullet comes first because these are the pictures the reader actually looks at.
+1. **Signals** — trend strength (score, direction, whether it clears the no-trend threshold), the resonance count, and the decisive readings ranked by `notability`. Both lead charts go here.
 2. **Entry** — the price or the condition that would trigger one.
 3. **Exit** — the target, and the invalidation that ends the idea.
-4. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
-5. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
+4. **Where it is** — VCP stage, position in the Chan structure, or which independent methods agree.
+5. **Risk** — the room above and below, from `riskReward` in `get_levels` and nothing else.
 
-Read `riskReward` as a whole, not as a single number. Report the distance both ways in percent AND in price, then weigh the support: `strength` is how much confluence formed it, and `levelsWithin` is how many levels hold up that area **including the nearest support itself** -- 1 means a lone line, 3 means it sits on a shelf. Do not describe it as levels *below* the support; that reads one too many. A thick shelf is worth more than one lone line at the same price.
+On risk, all binding:
 
-**A large ratio usually means price is sitting on support, not that the trade is generous.** When `atLevel` is true, report that price is resting on the level instead of quoting the ratio as if it were an edge.
+- Read `riskReward` whole: distance both ways in percent AND price, then `strength` (how much confluence formed the level) and `levelsWithin` (how many levels hold that area, **including the nearest one itself** — 1 is a lone line, 3 is a shelf).
+- **A large ratio usually means price is sitting on support, not that the trade is generous.** When `atLevel` is true, say price is resting on the level instead of quoting the ratio as an edge.
+- `atLevel` is an observation, never a verdict. Before calling it an entry, require all of: the level below is strong and not thin, room above worth taking, evidence price is holding rather than still falling, and a stated invalidation. Otherwise report the position and stop.
+- **Never state an account percentage, position size, or risk budget** — not "risk 0.5–1% per trade", nothing of that kind — unless the user gave their portfolio size and risk budget in this conversation.
+- The chart under this bullet must be the `get_levels` chart. If unavailable, say there is no matching chart; never substitute another module's image.
+- **Only cite prices listed in `drawnLevels`** — that is exactly what the attached chart contains. Never compute your own "nearest" level; `riskReward` already reports it and its bounds are guaranteed to be in `drawnLevels`.
 
-`atLevel` is an observation, never a verdict. It says price is near a level and nothing more. A small downside is therefore not automatically a defect -- but it is not automatically an opportunity either, because price sitting on a weak level that is about to give way looks identical in this field. Before calling it an entry, require: the level below is strong (`strength`) and not thin (`levelsWithin`), there is room above worth taking, some evidence price is actually holding rather than still falling, and a stated invalidation for when it breaks. Absent those, report the position and stop there.
+Attach the chart that shows the thing being claimed, in every bullet; when there is none, say so.
 
-Two rules on the risk bullet specifically, because real answers have broken both:
+Write so a reader understands on first pass. Precise, not ornamental; avoid jargon labels such as `regime`, `trigger`, `payoff`.
 
-- **Never state an account percentage, a position size, or a risk budget** — not "risk 0.5–1% per trade", not any figure of that kind — unless the user has given their portfolio size and their own risk budget in this conversation. Those numbers are a common convention, not something we computed, and printing one turns a measurement into unauthorised advice.
-- **The chart under this bullet must be the levels chart from `get_levels`.** If it is unavailable, say there is no matching chart. Never substitute a TD9, Chan or VCP image to satisfy the one-chart-per-bullet habit: a picture that does not show what the sentence claims is worse than no picture.
-- **Only cite prices listed in `drawnLevels`.** That field names exactly what the attached chart contains. A price that is not in it cannot be checked against the picture, so do not present one as an entry, target, invalidation or bound -- and never compute your own "nearest" level: `riskReward` already reports the nearest on each side, and its bounds are guaranteed to be in `drawnLevels`.
-
-That second rule applies to every bullet. Attach the chart that shows the thing being claimed; when there is none, say so rather than reaching for another module's image.
-
-Write it so a reader understands it on first pass. Be precise, not ornamental, and avoid jargon labels such as `regime`, `trigger` or `payoff`.
-
-**Never state a win rate, a confidence interval, or any probability of success.** These engines are rule-based and there is no backtest behind them, so such a number would be invented. `riskReward` measures distance to real levels and is not a probability: a ratio of 2 means twice the room, never a 2-in-3 chance. When `riskReward` returns null bounds, say the levels are too close to measure against rather than filling in a figure.
+**Never state a win rate, a confidence interval, or any probability of success.** These engines are rule-based with no backtest behind them, so such a number would be invented. `riskReward` is distance, not probability: a ratio of 2 means twice the room, never a 2-in-3 chance. When its bounds are null, say the levels are too close to measure.

@@ -42,6 +42,10 @@ Both are drawn on the last closed bar and report their own `barTs`; if that
 differs from the readings' `barTs`, the latest bar is still forming -- say
 which one you mean rather than letting the two pass as the same.
 
+`readings` is columnar: `readings.fields` names the columns and each category
+holds rows in that order, which costs about a quarter less than the same rows
+as objects. A null `notability` cell means that reading is not taking a side.
+
 **Rank the readings by `notability`, and never let a pinned chart line pass
 for agreement.** Every reading carries `notability` (0-100) and
 `barsSinceFlip`: recency of the last change of mind, combined with how rarely
