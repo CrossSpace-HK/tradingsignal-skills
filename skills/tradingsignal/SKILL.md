@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.49"
+  version: "0.1.50"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -77,11 +77,7 @@ and do not fill the gap from memory.
 Rationale for every rule here, and the failures each one came from, is in [output contract](references/output-contract.md). Read it when a rule looks wrong for your case; the rules themselves are binding without it.
 
 - Every decision-relevant reason returns: claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and that module's chart URL immediately after the reason.
-- Charts are markdown links whose TEXT names symbol, timeframe and method — `[查看 ETH/USDT 4小时 TD9 图](url)`. Never a naked URL, never an image embed (`![](...)`): chat clients do not reliably fetch remote images.
-- **Chart URL ≠ method-page URL.** The chart is a picture; the method page is the live interactive analysis. Never build the method-page link yourself — use the `openIn` the tools return, which carries the bar and snapshot the analysis ran on.
-- Pass `conclusion` to any tool that returns a chart (`get_indicators`, `get_method_analysis`, `get_chart`, `get_levels`): one line, ≤80 chars, **your** reading, not an engine reading.
-- The image captions itself and says for itself when the history behind it has moved. Do not paraphrase that caption as if you had checked it, and do not claim the chart matches the analysis's other inputs — the check covers that symbol's own bars at that timeframe only.
-- Use the chart `get_method_analysis` returns; otherwise `get_chart` with the matching preset (`price`, `chan`, `td9`, `wyckoff`, `vcp`, `levels`, `signals`, `trend`). Say when a chart is contextual rather than the evidence itself.
+- **Attaching a chart at all? Read [chart links](references/chart-links.md) first** — link form, chart URL versus method page, `conclusion`, presets, and which chart belongs under which bullet. Not optional when a chart is going into the answer.
 - **Two charts lead.** `get_indicators` returns both: `chart` (均线/MACD/RSI pinned + up to three by `notability`, six overlays) and `trendChart` (composite 0-100 strength, signed, with the no-trend band). Both go above the method charts. The main chart narrows with `categories`/`side`; the trend chart never narrows. Both are drawn on the last closed bar and carry their own `barTs` — when it differs from the readings' `barTs`, the last bar is still forming, so name the bar you mean.
 - **Drawn ≠ decisive.** 均线, MACD and RSI are pinned whatever they read. `notable` says what was drawn and marks pinned ones `core: true`; `signal` is what says bullish or bearish. Name the decisive ones explicitly.
 - `get_indicators` returns `readings` columnar: `readings.fields` names the columns, each category holds rows in that order. A null `notability`/`barsSinceFlip` cell means the reading is not taking a side.
@@ -105,10 +101,7 @@ On risk, all binding:
 - **A large ratio usually means price is sitting on support, not that the trade is generous.** When `atLevel` is true, say price is resting on the level instead of quoting the ratio as an edge.
 - `atLevel` is an observation, never a verdict. Before calling it an entry, require all of: the level below is strong and not thin, room above worth taking, evidence price is holding rather than still falling, and a stated invalidation. Otherwise report the position and stop.
 - **Never state an account percentage, position size, or risk budget** — not "risk 0.5–1% per trade", nothing of that kind — unless the user gave their portfolio size and risk budget in this conversation.
-- The chart under this bullet must be the `get_levels` chart. If unavailable, say there is no matching chart; never substitute another module's image.
-- **Only cite prices listed in `drawnLevels`** — that is exactly what the attached chart contains. Never compute your own "nearest" level; `riskReward` already reports it and its bounds are guaranteed to be in `drawnLevels`.
-
-Attach the chart that shows the thing being claimed, in every bullet; when there is none, say so.
+- The chart under this bullet, and only prices from `drawnLevels`: see [chart links](references/chart-links.md).
 
 Write so a reader understands on first pass. Precise, not ornamental; avoid jargon labels such as `regime`, `trigger`, `payoff`.
 
