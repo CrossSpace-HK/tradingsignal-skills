@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.47"
+  version: "0.1.48"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -58,7 +58,10 @@ and do not fill the gap from memory.
 ## Shared rules
 
 - Use `describe_capabilities` before assuming market, symbol, timeframe, freshness, or cohort coverage.
-- Use the narrowest granular MCP tool that answers the question. Treat `analyze_symbol` as an optional quick overview, not the default research path or independent confirmation.
+- Use the narrowest granular MCP tool that answers the question. Treat `analyze_symbol` as an optional quick overview, not the default research path or independent confirmation. **Never call it in the same turn as `get_indicators`** — the two return the same readings, and paying for both costs about 2,100 tokens for a second copy.
+- **Ask `get_indicators` for `side: "decisive"` when researching.** The undecided readings are about a quarter of the response and `summary`/`resonance` still carry the full counts, so nothing is lost. Narrow with `categories` too when the question is about one family.
+- **Issue independent calls together, not one after another.** `get_indicators`, `get_levels` and each `get_method_analysis` do not depend on each other; sent as one batch they cost one round trip instead of four, which is most of the wall-clock a user waits through.
+- **Do not open `SKILL.zh-CN.md` or any `*.zh-CN.md` reference at runtime.** They are human reading copies of the English files, so loading one buys nothing and costs as much as the file it mirrors. Answer in the user's language from the English instructions.
 - Preserve `notApplicable` and “not computable” as distinct from neutral and from “no signal.”
 - Higher timeframes set the backdrop; lower timeframes refine entries. Do not average away a deliberate `1d trend -> 4h pullback -> 1h restart` structure.
 - Never compare relative-strength percentiles from different market cohorts as absolute cross-market scores.
