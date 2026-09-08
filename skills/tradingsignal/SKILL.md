@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.44"
+  version: "0.1.45"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -77,11 +77,13 @@ Give every chart as a markdown link whose TEXT names the chart in words — `[�
 
 Two different links, never conflated: a **chart URL** opens a picture; a **method-page URL** opens the product's live, interactive analysis for that symbol, timeframe and method. Offer the method page when the user wants "the latest analysis", the chart when the sentence's evidence is the picture. **Never build the method-page link yourself**: every chart the tools return carries `openIn`, which opens the app at the same symbol, timeframe, method AND the same bar the analysis ran to, with the snapshot it was drawn from. A hand-built URL loses the snapshot, so the reader lands on live prices while the sentence beside it describes a different moment.
 
-Pass `conclusion` when you ask for a chart (`get_method_analysis`, `get_chart`, `get_levels`): one line, at most 80 characters, **your** reading rather than an engine's — it is printed at the top of the image. The picture then states the same thing as the prose beside it. Do not restate an engine's raw output there ("TD9 count is 9"); the number is already in the chart.
+Pass `conclusion` when you ask for a chart (`get_indicators`, `get_method_analysis`, `get_chart`, `get_levels`): one line, at most 80 characters, **your** reading rather than an engine's — it is printed at the top of the image. The picture then states the same thing as the prose beside it. Do not restate an engine's raw output there ("TD9 count is 9"); the number is already in the chart.
 
 The image captions itself with symbol, timeframe and the bar it is drawn to, and it is drawn from the exact bars the analysis ran on. When the history behind a chart has since moved, the image says so itself. So do not paraphrase the caption as if you had checked it, and do not claim a chart matches the analysis's other inputs — the check covers that symbol's own bar series at that timeframe, nothing else.
 
-Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, or `vcp`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
+Use the chart returned by `get_method_analysis` when available. Otherwise call `get_chart` with the same symbol and timeframe and the matching preset: `price`, `chan`, `td9`, `wyckoff`, `vcp`, `levels`, or `signals`. Say when a chart is contextual rather than a direct overlay of the numerical evidence.
+
+**The signals chart leads.** `get_indicators` returns one: the indicators currently taking a side, drawn on the price, at most two per category and six in all. It answers "which readings are bullish, which are bearish, and where is each one saying it" in a single picture, so it goes ABOVE the method charts — those show one method's internals, this shows the conclusion. It narrows with the readings: filter by `categories` or `side` and the image shows the same subset. It is drawn on the last closed bar and carries its own `barTs`; when that differs from the readings' `barTs`, the latest bar is still forming, so name the bar you mean.
 
 Keep the answer conclusion-first. State explicitly when no setup qualifies; never manufacture actions to fill a list.
 
@@ -89,10 +91,11 @@ Keep the answer conclusion-first. State explicitly when no setup qualifies; neve
 
 Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, with the matching chart immediately after the bullet it supports:
 
-1. **Entry** — the price or the condition that would trigger one.
-2. **Exit** — the target, and the invalidation that ends the idea.
-3. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
-4. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
+1. **Signals** — trend strength, the resonance count, and the decisive readings that drive it, with the signals chart. This bullet comes first because it is the picture the reader actually looks at.
+2. **Entry** — the price or the condition that would trigger one.
+3. **Exit** — the target, and the invalidation that ends the idea.
+4. **Where it is** — which VCP stage, where in the Chan structure, or which independent methods agree.
+5. **Risk** — the room above and below, taken from `riskReward` in `get_levels` and from nothing else.
 
 Read `riskReward` as a whole, not as a single number. Report the distance both ways in percent AND in price, then weigh the support: `strength` is how much confluence formed it, and `levelsWithin` is how many levels hold up that area **including the nearest support itself** -- 1 means a lone line, 3 means it sits on a shelf. Do not describe it as levels *below* the support; that reads one too many. A thick shelf is worth more than one lone line at the same price.
 
