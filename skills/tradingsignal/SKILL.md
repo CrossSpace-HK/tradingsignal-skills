@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.46"
+  version: "0.1.47"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -90,6 +90,8 @@ Use the chart returned by `get_method_analysis` when available. Otherwise call `
 **Rank with `notability`, do not eyeball it.** Every reading carries `notability` (0-100) and `barsSinceFlip`. The score combines how recently the indicator changed its mind with how rarely it takes this side at all, so a reading held for sixty bars ranks below one that fired three bars ago, and a pattern or divergence that fires in 5% of bars ranks above both. When you name "the important bullish and bearish signals", take them in that order rather than by whichever you happened to read first.
 
 Keep the answer conclusion-first. State explicitly when no setup qualifies; never manufacture actions to fill a list.
+
+**The conclusion carries only what has a clear reading.** Keep it short: the view, and the evidence that actually decided it. A method whose engine has nothing to say does not go in the conclusion, and does not get a paragraph of its own either — see "When not to write about a method" in `references/obsidian-vault.md` for what each engine's "nothing to say" looks like. Do not write the omission as a line ("Wyckoff and VCP show no clear conclusion"); a sentence shaped like a finding, reporting no finding, is the padding this rule exists to remove. If the user asked about that method directly, answer in one clause with the reason.
 
 ## Report shape
 

@@ -50,11 +50,22 @@ the pinned three `core: true`, and gives a `why` for the rest. 均线, MACD and
 RSI appear on the chart whatever they read, so state which readings are
 actually decisive.
 
-**Leave Wyckoff out when it has no clear reading.** The engine states its own
-limit: the side is decided only by the direction of the leg before the range,
-and it cannot separate distribution from re-accumulation in an uptrend; a range
-with `tr.quality < 0.5` is not tradeable. Writing the paragraph anyway presents
-a default as a judgement. Omitting it costs the analysis nothing.
+**Leave a method out when it has no clear reading -- every method, not just
+Wyckoff.** Writing the paragraph anyway presents a default as a judgement, and
+the reader cannot tell which one they are holding. Do not write the omission
+either: "Chan has no clear conclusion" is a sentence shaped like a finding.
+Say it only if the user asked about that method directly, and then in one
+clause with the reason.
+
+Each engine declares its own version of nothing-to-say: Wyckoff cannot
+separate distribution from re-accumulation in an uptrend and calls
+`tr.quality < 0.5` untradeable; VCP's `nearMissReason` means no pattern was
+found, and `unavailable` means the score came from fewer factors; a Chan 笔
+with `sureness: "MAYBE"` is unconfirmed and a borderline divergence `ratio` is
+a cutoff, not a finding; a TD9 count still in progress is a maturity, not a
+direction; the Fibonacci rhythm layer is exploratory and may not be counted as
+strong resonance evidence. See `references/obsidian-vault.md` for the same
+list in full.
 
 Do not treat the combined overview or two outputs from one engine as independent evidence. Preserve every caveat and distinguish unavailable computation from a neutral reading.
 

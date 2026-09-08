@@ -233,15 +233,37 @@ indicators are bullish and bearish and which ones are actually taking a side.
 State the view, then one line of resonance and trend, and only then open up
 the individual methods.
 
-## When not to write about Wyckoff
+## When not to write about a method
 
-**Leave Wyckoff out when it has no clear reading.** The engine says so itself:
-the side is decided only by the direction of the leg before the range, and it
-**cannot separate distribution from re-accumulation in an uptrend**; a range
-with `tr.quality < 0.5` is not tradeable either. A Wyckoff paragraph written in
-those conditions reads as a judgement when it is a default. Omitting it costs
-the analysis nothing; writing it anyway costs the reader their trust in the
-rest.
+**A method with no clear reading is left out — all of them, not just
+Wyckoff.** A paragraph written in that condition reads as a judgement when it
+is a default, and the reader cannot tell the two apart. Omitting it costs the
+analysis nothing; writing it anyway costs the reader their trust in the rest.
+
+Do not write the omission either. "缠论无明显结论" is a sentence that looks
+like a finding and is not one; leave the section out. The exception is a
+direct question about that method — then say in one clause that it has no
+clear reading, and why.
+
+Each engine declares its own version of "nothing to say":
+
+- **Wyckoff** — the side is decided only by the direction of the leg before
+  the range, and it **cannot separate distribution from re-accumulation in an
+  uptrend**; a range with `tr.quality < 0.5` is not tradeable; an unconfirmed
+  event is not a signal.
+- **VCP** — `nearMissReason` is the engine saying no VCP was found, so there
+  is no pattern to write about; a stage on its own is one clause, not a
+  section. When `unavailable` lists missing inputs the score came from fewer
+  factors and must not be presented beside a complete one.
+- **Chan** — a 笔 with `sureness: "MAYBE"` is unconfirmed and may not be used
+  as fact; with no 买卖点 and an open 中枢 there is no conclusion to state. The
+  divergence threshold is a cutoff on a continuous quantity, so a borderline
+  `ratio` is not a finding.
+- **TD9** — a count still in progress is not a signal. `nextBarNeeds` says
+  what the next close must do; until then the maturity is the fact, not a
+  direction.
+- **Fibonacci rhythm** — exploratory. It may not be counted as strong
+  resonance evidence or used alone for entry.
 
 ## Charts
 
