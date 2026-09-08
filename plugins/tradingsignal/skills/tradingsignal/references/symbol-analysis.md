@@ -17,11 +17,28 @@ Use `analyze_symbol` only when the user explicitly wants a quick overview. For r
 - `get_levels`: support, resistance, clusters, and distance from current price;
 - `get_candles` or `run_engine`: raw or advanced evidence only when needed.
 
+**Researching one symbol, trend strength and indicator resonance are required,
+not optional.** Take them from `get_indicators`: it reports, per category
+(trend, momentum, volatility, volume, patterns, support/resistance), how many
+indicators are bullish and bearish, **which ones are taking a side and the
+reason each gives**. `side: "decisive"` keeps only those actually taking one,
+which is usually the real question -- not "what does everything say" but
+"which of them is saying anything right now".
+
+**Leave Wyckoff out when it has no clear reading.** The engine states its own
+limit: the side is decided only by the direction of the leg before the range,
+and it cannot separate distribution from re-accumulation in an uptrend; a range
+with `tr.quality < 0.5` is not tradeable. Writing the paragraph anyway presents
+a default as a judgement. Omitting it costs the analysis nothing.
+
 Do not treat the combined overview or two outputs from one engine as independent evidence. Preserve every caveat and distinguish unavailable computation from a neutral reading.
 
 ## Explain the result
 
-Lead with the symbol-level conclusion and current decision state. Then explain:
+**State the view in the first sentence** (buy / sell / neutral), **and follow
+it immediately with one line of trend strength and resonance** -- those are the
+fastest answers to "why this view", and they do not belong at the end. Then
+explain:
 
 1. where the higher timeframes stand;
 2. the current structure, and what has just triggered;

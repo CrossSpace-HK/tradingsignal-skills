@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "tradingsignal",
-  "version": "0.1.43",
+  "version": "0.1.44",
   "description": "Find, validate, and plan chart-backed technical opportunities with TradingSignal.",
   "author": {
     "name": "CrossSpace Hong Kong",

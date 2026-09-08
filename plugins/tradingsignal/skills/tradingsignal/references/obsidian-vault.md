@@ -29,10 +29,17 @@ procedure is numbered and none of its steps is optional or reorderable:
 1. **Derive the identity.** `analysis_id` = 6 lowercase hex characters, stable
    for this analysis, **in the front matter** — attachments are bound to the
    note by it, so it cannot be dropped.
-   **Filename = `YYYY-MM-DD <SYMBOL> <timeframe> <status>.md`**, e.g.
-   `2026-09-08 NVDA 1d 待观察.md`. `<SYMBOL>` is the symbol with `=X` dropped
-   and every non-alphanumeric removed (`BTC/USDT` → `BTCUSDT`); `<timeframe>`
-   is the **decision timeframe** -- a multi-timeframe study still decides on
+   **Filename = `<SYMBOL> <bias> <YYYY-MM-DD> <timeframe>.md`**, e.g.
+   `BTC-USDT 买入 2026-09-08 1d.md`. **The symbol leads**, because that is what
+   a person scans a folder for; `<bias>` is the Chinese `bias` value
+   (`买入`/`卖出`/`中性`). **The one-line conclusion does NOT go in the
+   filename** -- it is too long and carries punctuation a filename should not;
+   its place is the first line of the body (step 6). `<SYMBOL>` uses the SAME
+   spelling as the hub page: drop `=X`, replace `/` with `-` (`BTC/USDT` →
+   `BTC-USDT`, `EURUSD=X` → `EURUSD`), so an analysis and its hub are spelled
+   alike and there is one rule to remember. `status` stays in the front matter
+   and out of the filename: a note is looked for by its VIEW far more often
+   than by how it was handled. `<timeframe>` is the **decision timeframe** -- a multi-timeframe study still decides on
    one, that one goes in the name and in `timeframe`, and any other the body
    leans on is declared in `context_timeframes`, which is also what permits a
    link to it. "多周期" is not a timeframe and cannot be sorted or filtered.
@@ -178,6 +185,57 @@ Read the vault's own `标签.md` and use only the tags it lists. Free-form tags 
 - Keep the two kinds separate. "All US equities" is a fact; "all the ones I was long" is a judgement, and mixing them in one namespace makes both unfilterable.
 
 If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.md` rather than inventing one in a note.
+
+## How the body opens
+
+**The first block is the conclusion, not the facts.** A reader opening an
+analysis is answering "what do you think", not "what happened"; the facts
+support the conclusion, so they come after it.
+
+**Straight after the H1 comes a coloured conclusion callout**, in a fixed
+shape:
+
+```markdown
+# BTC/USDT · 1d · 截至 2026-09-07
+
+> [!success] 买入 · BTC/USDT · 1d · 2026-09-08 14:30
+> 站上 76,257 的三买确认后顺势跟进，止损 74,100，目标 81,500。
+```
+
+- **The callout type comes from the view, and that is where the colour comes
+  from**: 买入 → `[!success]` (green), 卖出 → `[!danger]` (red), 中性/观望 →
+  `[!note]` (blue). Obsidian colours callouts in both live preview and reading
+  view, which raw `<span style>` does not do reliably -- Markdown has no colour
+  syntax, so do not hand-roll HTML for it.
+- First line: view, symbol, timeframe, date and time. Second line: the one-line
+  conclusion, readable on its own -- a direction plus a trigger, an
+  invalidation or a target. Never "see below".
+- The view is one of exactly three words -- 买入 / 卖出 / 中性 -- matching
+  `bias`. An invented phrase like "cautiously bullish" cannot be sorted or
+  filtered.
+
+**`## 当时的事实` comes after the conclusion.** The order is conclusion →
+reasoning → facts → levels → invalidation.
+
+## Two things the conclusion must carry
+
+**Trend strength and indicator resonance belong in the conclusion paragraph**,
+not buried further down: they are the two fastest answers to "why this view".
+Take the resonance from `get_indicators` -- it reports, per category (trend,
+momentum, volatility, volume, patterns, support/resistance), how many
+indicators are bullish and bearish and which ones are actually taking a side.
+State the view, then one line of resonance and trend, and only then open up
+the individual methods.
+
+## When not to write about Wyckoff
+
+**Leave Wyckoff out when it has no clear reading.** The engine says so itself:
+the side is decided only by the direction of the leg before the range, and it
+**cannot separate distribution from re-accumulation in an uptrend**; a range
+with `tr.quality < 0.5` is not tradeable either. A Wyckoff paragraph written in
+those conditions reads as a judgement when it is a default. Omitting it costs
+the analysis nothing; writing it anyway costs the reader their trust in the
+rest.
 
 ## Charts
 
