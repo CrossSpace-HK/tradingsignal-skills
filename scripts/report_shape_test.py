@@ -14,6 +14,15 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / "skills" / "tradingsignal"
 REFS = SKILL / "references"
 
+
+def flat(name):
+    """A carrier file's text with every run of whitespace made one space.
+
+    Progressive disclosure moved many rules into wrapped reference prose, so a
+    phrase can straddle a line break; the rule is the words, not the wrap.
+    """
+    return re.sub(r"\s+", " ", (SKILL / name).read_text(encoding="utf-8"))
+
 # A reference may describe WHAT to look for. It may not define its own answer
 # format, because SKILL.md already does and the model cannot obey both.
 COMPETING = [
@@ -50,7 +59,7 @@ class ReportShape(unittest.TestCase):
 
     def test_forbids_invented_probabilities(self):
         # The one instruction a model drops when it wants to sound useful.
-        for name, needle in (("SKILL.md", "no backtest"), ("SKILL.zh-CN.md", "没有做过回测")):
+        for name, needle in (("SKILL.md", "no backtest"), ("SKILL.zh-CN.md", "背后没有回测")):
             self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
 
     def test_rejected_jargon_survives_only_as_a_prohibition(self):
@@ -86,11 +95,19 @@ class ReportShape(unittest.TestCase):
         Padding "one chart per bullet" with whatever image is to hand makes the
         picture contradict the sentence, which is worse than no picture.
         """
+        # The rule lives in the chart reference; SKILL.md's risk bullet must
+        # still send the reader there, or the rule is never loaded.
         for name, needles in (
-            ("SKILL.md", ("levels chart from `get_levels`", "no matching chart")),
-            ("SKILL.zh-CN.md", ("支撑阻力图", "没有对应的图")),
+            ("references/chart-links.md", (
+                "The risk bullet's chart must be the `get_levels` chart specifically",
+                "Where there is none, say so rather than reaching for another module's image")),
+            ("references/chart-links.zh-CN.md", (
+                "风险那一条的图必须是 `get_levels` 的图",
+                "没有就说没有，绝不拿别的模块的图来凑")),
+            ("SKILL.md", ("The chart under this bullet, and only prices from `drawnLevels`: see [chart links](references/chart-links.md)",)),
+            ("SKILL.zh-CN.md", ("这一条下面的图，以及只能引用 `drawnLevels` 里的价格：见[附图的规矩](references/chart-links.zh-CN.md)",)),
         ):
-            text = (SKILL / name).read_text(encoding="utf-8")
+            text = flat(name)
             for needle in needles:
                 self.assertIn(needle, text, f"{name} no longer binds the risk chart: {needle}")
 
@@ -103,10 +120,12 @@ class ReportShape(unittest.TestCase):
         own "nearest" level off a list the picture does not match.
         """
         for name, needles in (
-            ("SKILL.md", ("drawnLevels", "never compute your own")),
-            ("SKILL.zh-CN.md", ("drawnLevels", "不要自己算")),
+            ("references/chart-links.md", ("only prices listed in `drawnLevels` may be cited",)),
+            ("references/chart-links.zh-CN.md", ("只能引用 `drawnLevels` 里的价格",)),
+            ("SKILL.md", ("only prices from `drawnLevels`",)),
+            ("SKILL.zh-CN.md", ("只能引用 `drawnLevels` 里的价格",)),
         ):
-            text = (SKILL / name).read_text(encoding="utf-8")
+            text = flat(name)
             for needle in needles:
                 self.assertIn(needle, text, f"{name} no longer binds prices to the drawn set: {needle}")
 
@@ -120,10 +139,10 @@ class ReportShape(unittest.TestCase):
         automatically a defect -- but it is not automatically an opportunity.
         """
         for name, needles in (
-            ("SKILL.md", ("observation, never a verdict", "not automatically an opportunity")),
-            ("SKILL.zh-CN.md", ("是一个观察，不是结论", "也不自动等于机会")),
+            ("SKILL.md", ("`atLevel` is an observation, never a verdict", "Before calling it an entry, require all of")),
+            ("SKILL.zh-CN.md", ("`atLevel` 只是观察，不是结论", "要叫它入场，必须同时满足")),
         ):
-            text = (SKILL / name).read_text(encoding="utf-8")
+            text = flat(name)
             for needle in needles:
                 self.assertIn(needle, text, f"{name} treats atLevel as sufficient: {needle}")
         # And the earlier over-claim must not come back.
@@ -141,8 +160,8 @@ class ReportShape(unittest.TestCase):
         density signal -- the difference between a shelf and a single line.
         """
         for name, needle in (
-            ("SKILL.md", "including the nearest support itself"),
-            ("SKILL.zh-CN.md", "含最近这条本身"),
+            ("SKILL.md", "including the nearest one itself"),
+            ("SKILL.zh-CN.md", "含最近那一条本身"),
         ):
             self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
         # The wording that caused it must not return -- checked line by line,
@@ -160,24 +179,27 @@ class ChartLinksAreReadable(unittest.TestCase):
 
     def test_the_named_link_form_is_mandated_in_both_languages(self):
         for name, needle in (
-            ("SKILL.md", "whose TEXT names the chart"),
-            ("SKILL.zh-CN.md", "链接文字写明内容"),
+            ("references/chart-links.md", "Charts are markdown links whose TEXT names symbol, timeframe and method"),
+            ("references/chart-links.zh-CN.md", "链接文字要写明标的、周期、方法"),
+            # ...and every session that attaches a chart is sent there first.
+            ("SKILL.md", "Read [chart links](references/chart-links.md) first"),
+            ("SKILL.zh-CN.md", "先读[附图的规矩](references/chart-links.zh-CN.md)"),
         ):
-            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+            self.assertIn(needle, flat(name), name)
 
     def test_naked_signed_urls_are_forbidden_in_both_languages(self):
         for name, needle in (
-            ("SKILL.md", "never a naked signed URL"),
-            ("SKILL.zh-CN.md", "不裸露签名长串"),
+            ("references/chart-links.md", "Never a naked URL"),
+            ("references/chart-links.zh-CN.md", "不许裸 URL"),
         ):
-            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+            self.assertIn(needle, flat(name), name)
 
     def test_chart_and_method_page_urls_are_distinguished(self):
         for name, needles in (
-            ("SKILL.md", ("chart URL", "method-page URL", "do not guess its parameters")),
-            ("SKILL.zh-CN.md", ("图表 URL", "方法页 URL", "不要猜参数")),
+            ("references/chart-links.md", ("Chart URL ≠ method-page URL", "Never build the method-page link yourself")),
+            ("references/chart-links.zh-CN.md", ("图链接 ≠ 方法页链接", "方法页链接绝不能自己拼")),
         ):
-            text = (SKILL / name).read_text(encoding="utf-8")
+            text = flat(name)
             for needle in needles:
                 self.assertIn(needle, text, f"{name} is missing '{needle}'")
 
@@ -195,15 +217,18 @@ class TwoSurfacesForCharts(unittest.TestCase):
     produced a note with no pictures in it."""
 
     def test_the_chat_surface_forbids_embeds(self):
-        for name, needle in (("SKILL.md", "never an inline image embed"), ("SKILL.zh-CN.md", "不用行内图片嵌入")):
-            self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+        for name, needle in (
+            ("references/chart-links.md", "never an image embed"),
+            ("references/chart-links.zh-CN.md", "不许内嵌图片"),
+        ):
+            self.assertIn(needle, flat(name), name)
 
     def test_the_vault_surface_REQUIRES_embeds(self):
         for name, needles in (
-            ("references/obsidian-vault.md", ("Two surfaces, opposite rules", "EMBEDDED in the body", "Archiving is REQUIRED", "DEGRADED record")),
-            ("references/obsidian-vault.zh-CN.md", ("两个界面，规则相反", "嵌在正文里", "归档是必须项", "降级记录")),
+            ("references/obsidian-vault.md", ("This surface is the opposite of a chat reply", "Decide by surface, not by habit", "EMBEDDED in the body", "Archiving is REQUIRED", "DEGRADED record")),
+            ("references/obsidian-vault.zh-CN.md", ("这个界面和聊天回复恰好相反", "按界面判断，不按习惯判断", "嵌在正文里", "归档是必须项", "降级记录")),
         ):
-            text = (SKILL / name).read_text(encoding="utf-8")
+            text = flat(name)
             for needle in needles:
                 self.assertIn(needle, text, f"{name} is missing '{needle}'")
 
@@ -241,6 +266,82 @@ class ExpiredSessionGuidance(unittest.TestCase):
     def test_it_says_where_the_command_is_typed(self):
         for name, needle in (("SKILL.md", "in the terminal"), ("SKILL.zh-CN.md", "在终端里输入")):
             self.assertIn(needle, (SKILL / name).read_text(encoding="utf-8"), name)
+
+
+class ShippedToolContract(unittest.TestCase):
+    """0.1.51: what production (TradingSignal b6be4092) already returns.
+
+    @QA-CEA: `get_td9_read` reads a DIFFERENT set of timeframes for a
+    daily-only name (`pulseTimeframes(timeframesForSymbol(...))`), so a skill
+    that promises 5m-1d everywhere teaches the model to expect rows that do
+    not exist. Both branches are pinned, in both languages.
+    """
+
+    CARRIERS = (
+        ("SKILL.md", "references/symbol-analysis.md"),
+        ("SKILL.zh-CN.md", "references/symbol-analysis.zh-CN.md"),
+    )
+
+    def test_td9_read_names_both_timeframe_sets(self):
+        for pair in self.CARRIERS:
+            for name in pair:
+                text = flat(name)
+                self.assertIn("`get_td9_read`", text, name)
+                self.assertIn("5m/15m/1h/4h/1d", text, f"{name}: intraday set")
+                self.assertIn("1d/1w/1mo", text, f"{name}: daily-only set")
+
+    def test_td9_read_is_answered_from_structured_and_dated_by_freshness(self):
+        for name, needles in (
+            ("SKILL.md", ("Answer from `structured`", "date the paragraph only", "`freshness[timeframe]`",
+                          "name a stale timeframe", "`get_method_analysis(engine=\"td9\")`")),
+            ("SKILL.zh-CN.md", ("依据 `structured` 作答", "只说明这段文字的时间", "`freshness[周期]`",
+                                "过期的周期要点名", "`get_method_analysis(engine=\"td9\")`")),
+        ):
+            text = flat(name)
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+    def test_trend_strength_fields_match_production(self):
+        # Field names are production's (lib/trendStrengthOverlay.ts); the five
+        # section ids are TREND_CATEGORY_ORDER, in that order.
+        for name in ("SKILL.md", "references/symbol-analysis.md"):
+            text = flat(name)
+            for needle in ("`trendStrength`", "`sections`", "`series`", "`seriesBars`", "`indicators`",
+                           "120 closed bars", "oldest first"):
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+        self.assertIn("(trend, momentum, volume, volatility, pattern — ", flat("SKILL.md"))
+        self.assertIn("`trend`, `momentum`, `volume`, `volatility`, `pattern`",
+                      flat("references/symbol-analysis.md"))
+        for name in ("SKILL.zh-CN.md", "references/symbol-analysis.zh-CN.md"):
+            text = flat(name)
+            for needle in ("`trendStrength`", "`sections`", "`series`", "`seriesBars`", "120 根已收盘"):
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+    def test_no_unshipped_live_settled_fields(self):
+        # The live/settled schema is a contract under review, not a release.
+        # Describing it before it ships teaches the model fields that 404.
+        for path in [SKILL / "SKILL.md", SKILL / "SKILL.zh-CN.md"] + sorted(REFS.glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            for word in ("settled", "observedAt", "servedAt", "live.", "provisional"):
+                self.assertNotIn(word, text, f"{path.name} describes unshipped field '{word}'")
+
+    def test_vault_doc_agrees_with_the_checker_on_market(self):
+        # vault_check.py (3de7b65) lets `market` be absent and rejects a wrong
+        # one; the reference used to say a missing market was "a guess". The
+        # doc, the checker and its tests must say the same thing.
+        for name, needles, stale in (
+            ("references/obsidian-vault.md",
+             ("A link missing any of symbol, timeframe or tab is not a deep link", "`market` may be left out",
+              "must carry the right one"),
+             "missing any of market"),
+            ("references/obsidian-vault.zh-CN.md",
+             ("缺 symbol、timeframe、tab 任何一项的链接不是深链", "`market` 可以省略", "就必须写对"),
+             "缺 market"),
+        ):
+            text = flat(name)
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+            self.assertNotIn(stale, text, f"{name} still calls a market-less link a guess")
 
 
 if __name__ == "__main__":

@@ -300,10 +300,13 @@ class VaultCheckPostcondition(unittest.TestCase):
         self.link(self.APP.replace("timeframe=1d", "timeframe=4h"))
         self.assertEqual(check(self.dir), [])
 
-    def test_a_missing_market_fails(self):
+    def test_a_missing_market_is_allowed(self):
+        # 3de7b65: the product's own deep links carry no `market` -- `/app`
+        # derives it from the symbol -- so demanding it failed links the
+        # product had just produced. Absent is fine; WRONG still fails (below).
         self.note()
         self.link(self.APP.replace("market=stock&", ""))
-        self.assertTrue(any("missing market" in p for p in check(self.dir)))
+        self.assertEqual(check(self.dir), [])
 
     def test_a_WRONG_market_fails(self):
         self.note()

@@ -14,7 +14,7 @@ Use `analyze_symbol` only when the user explicitly wants a quick overview. For r
 - `get_method_analysis(engine="chan")`: strokes, centers, structural points, confirmation, and invalidation;
 - `get_method_analysis(engine="wyckoff")`: range quality, phase, events, entry, stop, and target;
 - `get_method_analysis(engine="td9")`: setup/countdown maturity, TDST, risk level, and required next-bar confirmation;
-- `get_td9_read`: DeMark on 5m/15m/1h/4h/1d in one call -- one conclusion, the 9s and 13s behind it, each timeframe's stage; answer from `structured`, and check `freshness` per timeframe;
+- `get_td9_read`: DeMark on the symbol's own timeframes in one call (5m/15m/1h/4h/1d with intraday data; 1d/1w/1mo for a daily-only name) -- one conclusion, the 9s and 13s behind it, each timeframe's stage; answer from `structured`, and check `freshness` per timeframe;
 - `get_levels`: support, resistance, clusters, and distance from current price;
 - `get_candles` or `run_engine`: raw or advanced evidence only when needed.
 

@@ -50,7 +50,7 @@ OAuth 会过期，过期后所有工具调用都会失败。**直说这件事**�
 - 使用能回答问题的最窄 MCP 工具。`analyze_symbol` 只用于快速概览，不作为默认深度研究或独立确认。**不要在同一轮里同时调 `analyze_symbol` 和 `get_indicators`**——两者返回的是同一批读数，多付大约 2,100 token 只为拿到第二份副本。
 - **研究时给 `get_indicators` 传 `side: "decisive"`。** 未表态的读数约占响应的四分之一，而完整计数仍然在 `summary` / `resonance` 里，所以没有信息损失。问题只涉及某一类时，再加 `categories`。
 - **互不依赖的调用要一次发出去，不要一个接一个。** `get_indicators`、`get_levels` 和各个 `get_method_analysis` 之间没有依赖，一批发出只花一个往返而不是四个，用户等待的时间大部分就在这里。
-- **跨周期 DeMark 一次调用：`get_td9_read`。** 一次覆盖 5m/15m/1h/4h/1d——一个结论、背后的 9 和 13、每个周期所处阶段。依据 `structured` 作答；`text` 是四行摘要，它的 `createdAt`/`ageSeconds` 只说明这段文字的时间。数据本身多新看 `freshness[周期]`（`dataAsOf`、`fetchedAt`、`stale`）：过期的周期要点名，不能默默使用。单个周期的原始计数、TDST 和图：`get_method_analysis(engine="td9")`。
+- **跨周期 DeMark 一次调用：`get_td9_read`。** 按标的能力取一组周期：支持日内的标的是 5m/15m/1h/4h/1d，只有日线的标的（如期货、指数、港股/韩股）是 1d/1w/1mo——后者不要期待日内行。一个结论、背后的 9 和 13、每个周期所处阶段。依据 `structured` 作答；`text` 是四行摘要，它的 `createdAt`/`ageSeconds` 只说明这段文字的时间。数据本身多新看 `freshness[周期]`（`dataAsOf`、`fetchedAt`、`stale`）：过期的周期要点名，不能默默使用。单个周期的原始计数、TDST 和图：`get_method_analysis(engine="td9")`。
 - **运行时不要打开 `SKILL.zh-CN.md` 或任何 `*.zh-CN.md` 参考文件。** 它们是英文文件的中文阅读版，加载一份什么也不多，却要付和原文件一样多的 token。按英文指令执行，用用户的语言作答。
 - `notApplicable`、无法计算、中性和无信号是不同状态，不能合并。
 - 高周期定义市场状态，低周期优化入场；不要把 `1d 趋势 -> 4h 回调 -> 1h 重启` 平均成冲突。
@@ -94,6 +94,6 @@ OAuth 会过期，过期后所有工具调用都会失败。**直说这件事**�
 - **绝不给出账户百分比、仓位大小或风险预算**——"每笔风险 0.5–1%"这类数字一律不给，除非用户在本次对话里给了自己的资金规模和风险预算。
 - 这一条下面的图，以及只能引用 `drawnLevels` 里的价格：见[附图的规矩](references/chart-links.zh-CN.md)。
 
-写得让人第一遍就读懂。精确，不要修饰；避免 `regime`、`trigger`、`payoff` 这类术语标签。
+写得让人第一遍就读懂。精确，不要修饰；不要用 `regime`、`trigger`、`payoff` 这类术语标签。
 
 **绝不给出胜率、置信区间或任何成功概率。** 这些引擎是规则驱动的，背后没有回测，这类数字只能是编的。`riskReward` 量的是距离不是概率：比值 2 表示空间是两倍，绝不表示三分之二的胜算。
