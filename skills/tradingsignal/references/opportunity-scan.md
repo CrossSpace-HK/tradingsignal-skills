@@ -48,7 +48,7 @@ Deep-dive the best 5–10 candidates using the narrowest modules:
 - `get_method_analysis(engine="wyckoff")` for range, phase, events, entry, stop, and target;
 - `get_method_analysis(engine="td9")` for count maturity, TDST, risk level, and next-bar confirmation;
 - `get_levels` for multi-timeframe support, resistance, and clustering;
-- `get_candles` or `run_engine` only when granular results lack required evidence or the user explicitly asks for raw/advanced output.
+- `run_engine` only when granular results lack required evidence or the user explicitly asks for an engine's complete output. There is no raw-bar tool: agents read computed numbers, never OHLCV bars.
 
 Confirmed, active, recent structure outranks stale or unconfirmed signals. If indicator snapshots matter, preserve every indicator's name/id, value, state, timeframe, and threshold or rule; a resonance summary does not replace its inputs.
 

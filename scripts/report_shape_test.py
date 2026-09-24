@@ -381,5 +381,26 @@ class ChartSurfacesAgreeAcrossFiles(unittest.TestCase):
                 self.assertNotIn(stale, text, f"{name} tells chat to embed again: {stale}")
 
 
+
+class NoRawBarTool(unittest.TestCase):
+    """Leon (msg b7cb9302): agents read computed numbers, never raw bars.
+    get_candles was removed from the MCP (TradingSignal task #177); a skill
+    that still routes to it teaches the model to call a tool that is gone."""
+
+    def test_no_skill_file_names_get_candles(self):
+        root = ROOT / "skills"
+        for path in sorted(root.rglob("*.md")):
+            self.assertNotIn("get_candles", path.read_text(encoding="utf-8"), str(path.relative_to(ROOT)))
+
+    def test_the_rule_is_stated_where_the_escape_hatch_is(self):
+        for name, needle in (
+            ("references/symbol-analysis.md", "There is no raw-bar tool"),
+            ("references/symbol-analysis.zh-CN.md", "没有给 Agent 读原始 K 线的工具"),
+            ("references/opportunity-scan.md", "There is no raw-bar tool"),
+            ("references/opportunity-scan.zh-CN.md", "没有给 Agent 读原始 K 线的工具"),
+        ):
+            self.assertIn(needle, flat(name), name)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -69,7 +69,7 @@ Deep-dive only the best 5–10 candidates. Use the narrowest module that can ans
 - `get_method_analysis(engine="wyckoff")`: range quality, phase, events, entry, stop, and target;
 - `get_method_analysis(engine="td9")`: count maturity, TDST, risk level, and next-bar confirmation;
 - `get_levels`: multi-timeframe support, resistance, and clustering;
-- `get_candles` or `run_engine`: only when a granular result lacks required evidence or the user explicitly wants raw/advanced output.
+- `run_engine`: only when a granular result lacks required evidence or the user explicitly wants an engine's complete output. There is no raw-bar tool: agents read computed numbers, never OHLCV bars.
 
 Use `analyze_symbol` only as an optional quick overview. Do not use it as the default deep-research path or treat its combined summary as independent confirmation. The skill, not the MCP tool, decides which modules to call and how to reconcile them.
 
