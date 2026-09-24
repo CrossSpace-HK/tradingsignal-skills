@@ -1,6 +1,6 @@
 {
   "name": "tradingsignal",
-  "version": "0.1.50",
-  "skillDigest": "c846fae835fb56b07108fd8acd3ebe407ac3aa8f6d4a1d94716f68882d4f35d6",
-  "packageDigest": "d07b3d28e64d68c88ce81efd2624ecef1087670f080f2f777490381eee23ce61"
+  "version": "0.1.51",
+  "skillDigest": "d50d9b4bb99c9b5dabaa4b9fd906245086286b7f7fc1b7edaf368a5039459db8",
+  "packageDigest": "6c0885c63e4fa76460674a7f095f394810e39cb2a5ccc9fee926e5c4f4cb4999"
 }

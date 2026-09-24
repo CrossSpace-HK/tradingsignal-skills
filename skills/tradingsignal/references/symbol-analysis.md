@@ -14,6 +14,7 @@ Use `analyze_symbol` only when the user explicitly wants a quick overview. For r
 - `get_method_analysis(engine="chan")`: strokes, centers, structural points, confirmation, and invalidation;
 - `get_method_analysis(engine="wyckoff")`: range quality, phase, events, entry, stop, and target;
 - `get_method_analysis(engine="td9")`: setup/countdown maturity, TDST, risk level, and required next-bar confirmation;
+- `get_td9_read`: DeMark on 5m/15m/1h/4h/1d in one call -- one conclusion, the 9s and 13s behind it, each timeframe's stage; answer from `structured`, and check `freshness` per timeframe;
 - `get_levels`: support, resistance, clusters, and distance from current price;
 - `get_candles` or `run_engine`: raw or advanced evidence only when needed.
 
@@ -37,6 +38,22 @@ The main chart narrows with the list -- filter by `categories` or `side` and
 it shows the same subset, so it can never claim more than the text. The trend
 chart does not narrow: the strength is a composition over every contributor,
 and a filtered one would not be that number.
+
+`trendStrength` is the trend chart as numbers, computed from the same bars, so
+the two cannot disagree:
+
+- `score` (0-100), `direction` (-1/0/1) and `threshold`, the no-trend band;
+  below it the market is not trending, whatever the direction says.
+- `sections`: the five parts of the score -- `trend`, `momentum`, `volume`,
+  `volatility`, `pattern` -- each with its own `strength`, `direction` and
+  `indicators`. `indicators` is how many really contributed on that bar, not
+  how many the weight table names: one that could not be computed is dropped.
+  Say which section carries the score and which one disagrees.
+- `series`: the rolling strength, oldest first, at most the most recent 120
+  closed bars; `seriesBars` says how many it actually holds. Each point has a
+  `regime` field (`strong_up`, `strong_down` or `chop`, judged against the same threshold; do not label the answer with it).
+  Use it for "how long has this trend held" and "did it just fade", and say
+  it in plain words.
 
 Both are drawn on the last closed bar and report their own `barTs`; if that
 differs from the readings' `barTs`, the latest bar is still forming -- say

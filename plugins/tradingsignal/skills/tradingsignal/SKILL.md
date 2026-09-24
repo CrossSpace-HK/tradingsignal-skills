@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.50"
+  version: "0.1.51"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -61,6 +61,7 @@ and do not fill the gap from memory.
 - Use the narrowest granular MCP tool that answers the question. Treat `analyze_symbol` as an optional quick overview, not the default research path or independent confirmation. **Never call it in the same turn as `get_indicators`** — the two return the same readings, and paying for both costs about 2,100 tokens for a second copy.
 - **Ask `get_indicators` for `side: "decisive"` when researching.** The undecided readings are about a quarter of the response and `summary`/`resonance` still carry the full counts, so nothing is lost. Narrow with `categories` too when the question is about one family.
 - **Issue independent calls together, not one after another.** `get_indicators`, `get_levels` and each `get_method_analysis` do not depend on each other; sent as one batch they cost one round trip instead of four, which is most of the wall-clock a user waits through.
+- **DeMark across timeframes is one call: `get_td9_read`.** It covers 5m/15m/1h/4h/1d together — one conclusion, the 9s and 13s behind it, each timeframe's stage. Answer from `structured`; `text` is a four-line summary, and its `createdAt`/`ageSeconds` date the paragraph only. The data's age is `freshness[timeframe]` (`dataAsOf`, `fetchedAt`, `stale`): name a stale timeframe rather than using it silently. One timeframe's raw counts, TDST and chart: `get_method_analysis(engine="td9")`.
 - **Do not open `SKILL.zh-CN.md` or any `*.zh-CN.md` reference at runtime.** They are human reading copies of the English files, so loading one buys nothing and costs as much as the file it mirrors. Answer in the user's language from the English instructions.
 - Preserve `notApplicable` and “not computable” as distinct from neutral and from “no signal.”
 - Higher timeframes set the backdrop; lower timeframes refine entries. Do not average away a deliberate `1d trend -> 4h pullback -> 1h restart` structure.
@@ -79,6 +80,7 @@ Rationale for every rule here, and the failures each one came from, is in [outpu
 - Every decision-relevant reason returns: claim, backing, why it matters, timeframe, module, evidence fields, analysis timestamp, and that module's chart URL immediately after the reason.
 - **Attaching a chart at all? Read [chart links](references/chart-links.md) first** — link form, chart URL versus method page, `conclusion`, presets, and which chart belongs under which bullet. Not optional when a chart is going into the answer.
 - **Two charts lead.** `get_indicators` returns both: `chart` (均线/MACD/RSI pinned + up to three by `notability`, six overlays) and `trendChart` (composite 0-100 strength, signed, with the no-trend band). Both go above the method charts. The main chart narrows with `categories`/`side`; the trend chart never narrows. Both are drawn on the last closed bar and carry their own `barTs` — when it differs from the readings' `barTs`, the last bar is still forming, so name the bar you mean.
+- **Quote trend strength from `trendStrength`, not from the picture.** It is the numbers `trendChart` is drawn from: `score`/`direction`/`threshold`, the five `sections` (trend, momentum, volume, volatility, pattern — each with its own `strength`, `direction` and `indicators`, how many really contributed), and `series`, the rolling strength over at most the last 120 closed bars, oldest first, each with a `regime` field (do not label the answer with it; say it in plain words); `seriesBars` says how many it holds. Say which section carries the score. Field meanings: [symbol analysis](references/symbol-analysis.md).
 - **Drawn ≠ decisive.** 均线, MACD and RSI are pinned whatever they read. `notable` says what was drawn and marks pinned ones `core: true`; `signal` is what says bullish or bearish. Name the decisive ones explicitly.
 - `get_indicators` returns `readings` columnar: `readings.fields` names the columns, each category holds rows in that order. A null `notability`/`barsSinceFlip` cell means the reading is not taking a side.
 - **Rank by `notability`, not by reading order.** It combines recency of the last change of mind with how rarely that indicator takes this side.
@@ -89,7 +91,7 @@ Rationale for every rule here, and the failures each one came from, is in [outpu
 
 Lead with the conclusion: one sentence saying what to do, or that there is nothing to do. Then bullets, at most two sentences each, each followed by the chart that shows what it claims:
 
-1. **Signals** — trend strength (score, direction, whether it clears the no-trend threshold), the resonance count, and the decisive readings ranked by `notability`. Both lead charts go here.
+1. **Signals** — trend strength (score, direction, whether it clears the no-trend threshold, which section carries it), the resonance count, and the decisive readings ranked by `notability`. Both lead charts go here.
 2. **Entry** — the price or the condition that would trigger one.
 3. **Exit** — the target, and the invalidation that ends the idea.
 4. **Where it is** — VCP stage, position in the Chan structure, or which independent methods agree.
