@@ -267,18 +267,19 @@ Each engine declares its own version of "nothing to say":
 
 ## Charts
 
-**Decide by surface, not by habit.** There is one question: *will this surface
-fetch a remote image by itself?*
+**Two surfaces, two rules, decided by surface and not by habit.**
 
-- **Surfaces that render** (an Obsidian note; any chat box that displays remote
-  images): **embed it**. The snapshot URL already IS a PNG, so embedding shows
-  the chart without the reader clicking anything.
-- **Surfaces that do not** (Codex, Claude Code, any terminal or plain-text
-  reply): **a named text link, never an embed** — an embed there leaves a
-  broken placeholder exactly where the evidence was claimed to be.
+- **A vault note embeds only the LOCAL archived file**:
+  `![[附件/<analysis_id>-<slot>.png]]`, downloaded, hash-checked and saved as
+  described below. Never embed a remote URL in a note, neither the chart URL
+  nor the snapshot URL: a remote image is a live fetch, not a record.
+- **A chat reply never embeds a chart**, whatever the client can render.
+  Charts there are named text links, as [chart links](chart-links.md) says;
+  this file does not change that rule.
 
-Applying the chat rule to a note produces a wall of URLs; applying the note
-rule to a surface that cannot render produces a row of broken frames.
+Applying the chat rule to a note produces a wall of URLs; embedding in chat,
+or embedding a remote URL in a note, puts something other than the archived
+evidence where the evidence is claimed to be.
 
 **What Obsidian archives is the LIGHT chart.** The product mints charts light
 by default (`theme=light`) because a note is a white page, and a dark chart

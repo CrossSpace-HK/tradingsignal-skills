@@ -225,7 +225,7 @@ class TwoSurfacesForCharts(unittest.TestCase):
 
     def test_the_vault_surface_REQUIRES_embeds(self):
         for name, needles in (
-            ("references/obsidian-vault.md", ("This surface is the opposite of a chat reply", "Decide by surface, not by habit", "EMBEDDED in the body", "Archiving is REQUIRED", "DEGRADED record")),
+            ("references/obsidian-vault.md", ("This surface is the opposite of a chat reply", "decided by surface and not by habit", "EMBEDDED in the body", "Archiving is REQUIRED", "DEGRADED record")),
             ("references/obsidian-vault.zh-CN.md", ("这个界面和聊天回复恰好相反", "按界面判断，不按习惯判断", "嵌在正文里", "归档是必须项", "降级记录")),
         ):
             text = flat(name)
@@ -342,6 +342,43 @@ class ShippedToolContract(unittest.TestCase):
             for needle in needles:
                 self.assertIn(needle, text, f"{name} is missing '{needle}'")
             self.assertNotIn(stale, text, f"{name} still calls a market-less link a guess")
+
+
+
+class ChartSurfacesAgreeAcrossFiles(unittest.TestCase):
+    """@QA-CEA: chart-links said chat never embeds while obsidian-vault said a
+    chat box that renders remote images should embed. Each file was pinned
+    green on its own, which proved nothing about the two loaded together.
+    One contract: chat -> named links only; vault -> local archived file only."""
+
+    VAULT = ("references/obsidian-vault.md", "references/obsidian-vault.zh-CN.md")
+
+    def test_chat_never_embeds(self):
+        for name, needle in (("references/chart-links.md", "never an image embed"),
+                             ("references/chart-links.zh-CN.md", "不许内嵌图片")):
+            self.assertIn(needle, flat(name), name)
+
+    def test_vault_embeds_only_the_local_archive(self):
+        for name, needles in (
+            ("references/obsidian-vault.md", ("embeds only the LOCAL archived file", "`![[附件/<analysis_id>-<slot>.png]]`",
+                                              "Never embed a remote URL in a note")),
+            ("references/obsidian-vault.zh-CN.md", ("只嵌本地已归档的文件", "`![[附件/<analysis_id>-<slot>.png]]`",
+                                                    "笔记里绝不嵌远程 URL")),
+        ):
+            text = flat(name)
+            for needle in needles:
+                self.assertIn(needle, text, f"{name} is missing '{needle}'")
+
+    def test_vault_doc_restates_rather_than_overrides_the_chat_rule(self):
+        for name, needle in (("references/obsidian-vault.md", "A chat reply never embeds a chart"),
+                             ("references/obsidian-vault.zh-CN.md", "聊天回复一律不嵌图")):
+            self.assertIn(needle, flat(name), name)
+        # The instruction that contradicted chart-links must not come back.
+        for name in self.VAULT:
+            text = flat(name)
+            for stale in ("chat box that displays remote", "能显示远程图片的对话框",
+                          "The snapshot URL already IS a PNG", "快照链接本身就是一张"):
+                self.assertNotIn(stale, text, f"{name} tells chat to embed again: {stale}")
 
 
 if __name__ == "__main__":
