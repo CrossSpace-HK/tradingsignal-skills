@@ -2,7 +2,7 @@
 name: tradingsignal
 description: Use TradingSignal MCP for market screening, multi-timeframe opportunity discovery, single-symbol technical research, support/resistance analysis, and conditional trade planning across crypto, FX, commodities, and supported futures. Use when the user wants TradingSignal to find, validate, compare, or plan technical setups; not for macro news research, order execution, or position sizing without an explicit risk budget.
 metadata:
-  version: "0.1.52"
+  version: "0.1.53-research.1"
 ---
 
 [English](SKILL.md) | [中文](SKILL.zh-CN.md)
@@ -12,6 +12,8 @@ metadata:
 Route the user's request to the narrowest TradingSignal workflow, load only the references that workflow needs, and lead with the decision.
 
 ## Choose the workflow
+
+- Published platform research or a request to review the same frozen multi-timeframe report: read [platform research](references/platform-research.md). Load only the relevant shared method instructions; do not replace a published report with current readings.
 
 - Cross-market leaders or fresh strength: read the shared [market-screening playbook](references/opportunity-scan.md), then [cross-market leaders](references/cross-market-leaders.md).
 - A higher-timeframe trend with a lower-timeframe pullback and restart: read the shared [market-screening playbook](references/opportunity-scan.md), then [pullback restart](references/pullback-restart.md).

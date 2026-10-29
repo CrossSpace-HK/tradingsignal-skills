@@ -6,6 +6,8 @@
 
 根据用户的问题选择最窄的 TradingSignal 工作流，只加载当前工作流需要的 reference，并先给出决策结论。
 
+- 读取平台公开研究、回看同一份冻结多周期报告：按[平台研究](references/platform-research.md)读取，只加载相关方法的共享指令；不能用当前读数替代已发布观点。
+
 ## 选择工作流
 
 - 多市场领头羊或新近转强：先读共享的[市场筛选基础流程](references/opportunity-scan.zh-CN.md)，再读[多市场领头羊](references/cross-market-leaders.zh-CN.md)。
