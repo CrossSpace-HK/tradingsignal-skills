@@ -1,0 +1,309 @@
+[English](obsidian-vault.md) | [中文](obsidian-vault.zh-CN.md)
+
+# Recording an Analysis to Obsidian
+
+Use this workflow when the user asks to save an analysis for later review, or to review what they concluded before. It is **opt-in**: without it, nothing is ever written to disk.
+
+## Ask before writing anything
+
+1. Ask once, at the end of an analysis, whether to record it to Obsidian. Do not ask again in the same conversation after a "no".
+2. If yes, ask for the **vault path**. Never guess one, never write into a vault the user has not named, and never create a vault inside another vault's root — a nested vault is indexed twice and the two sets of notes bleed into each other.
+3. Check the path exists and holds `分析/`, `标的/` and `附件/`. If it does not, list what you would create and ask before creating it. Before writing into an existing vault, verify its shape still matches what you write — in particular that any Dataview column a symbol page asks for exists as a frontmatter field in the analysis template, because the drift renders as an empty column that looks exactly like "no analyses yet" (`scripts/vault_check.py` in this repository is the reference check).
+4. Write only inside `分析/`, `标的/` and `附件/`. Nothing outside those three, ever.
+
+The user must repeat the path in a new conversation unless they have stored it themselves; say so rather than inventing a remembered path.
+
+## Two layers, because one cannot answer both questions
+
+- `标的/<SYMBOL>.md` — one living note per instrument: what the user thinks **now**, and the levels that still matter. Rewritten as the view changes.
+- `分析/<date>-<SYMBOL>-<timeframe>-<id>.md` — one note per analysis: what was thought **that day**. Written once and not edited afterwards, except to fill in the review section.
+
+A single layer loses one of "what do I think now" and "what did I think then". Review needs both.
+
+## The write procedure — the same every time
+
+The first real run through a chat client drifted on four of these at once
+(invented filename, invented tags, no hub page, embedded live charts), so the
+procedure is numbered and none of its steps is optional or reorderable:
+
+1. **Derive the identity.** `analysis_id` = 6 lowercase hex characters, stable
+   for this analysis, **in the front matter** — attachments are bound to the
+   note by it, so it cannot be dropped.
+   **Filename = `<SYMBOL> <bias> <YYYY-MM-DD> <timeframe>.md`**, e.g.
+   `BTC-USDT 买入 2026-09-08 1d.md`. **The symbol leads**, because that is what
+   a person scans a folder for; `<bias>` is the Chinese `bias` value
+   (`买入`/`卖出`/`中性`). **The one-line conclusion does NOT go in the
+   filename** -- it is too long and carries punctuation a filename should not;
+   its place is the first line of the body (step 6). `<SYMBOL>` uses the SAME
+   spelling as the hub page: drop `=X`, replace `/` with `-` (`BTC/USDT` →
+   `BTC-USDT`, `EURUSD=X` → `EURUSD`), so an analysis and its hub are spelled
+   alike and there is one rule to remember. `status` stays in the front matter
+   and out of the filename: a note is looked for by its VIEW far more often
+   than by how it was handled. `<timeframe>` is the **decision timeframe** -- a multi-timeframe study still decides on
+   one, that one goes in the name and in `timeframe`, and any other the body
+   leans on is declared in `context_timeframes`, which is also what permits a
+   link to it. "多周期" is not a timeframe and cannot be sorted or filtered.
+   `<status>` is the `status` value.
+   **`analysis_id` does NOT go in the filename.** It exists so a machine can
+   bind attachments; in the filename it becomes a run of hex nobody can read,
+   and the filename is what Obsidian shows in its sidebar -- it is how a human
+   finds their own analysis again. Append ` <id>` ONLY when that day already
+   holds the same symbol, timeframe and status; that is a collision, not the
+   default shape.
+2. **`symbol` holds the product's canonical spelling, never an abbreviation.**
+   `BTC/USDT`, not `BTC`; `BRK-B`, not `BRK`. An abbreviation loses
+   information -- BTC against USDT, USD and USDC are three different series --
+   and the deep links carry the canonical form, so shortening it makes the
+   note disagree with its own links and the checker reports "the link opens X
+   but this analysis is about Y" for every one of them. The hub name derives
+   from the same canonical spelling: drop `=X`, replace `/` with `-`
+   (`BTC/USDT` → `BTC-USDT`).
+3. **Copy the front matter from `_模板/分析.md`** — every key, no additions,
+   no renames. Values come from the vault's own vocabularies; do not invent
+   field values in another language than the vocabulary uses.
+4. **Tags only from `标签.md`.** If the analysis needs a tag the vocabulary
+   lacks, propose the addition there — never mint one in a note.
+5. **Upsert the hub page, always.** `标的/<hub>.md` where `<hub>` is the
+   symbol with `=X` dropped and `/` replaced by `-`. If it does not exist,
+   create it from `_模板/标的.md` with the derived fact tags. Either way, add
+   a plain-Markdown link to the new analysis under `## 历史分析`, and update
+   `现在的看法`, `current_bias` and `updated`. The upsert is IDEMPOTENT: a
+   link that already exists is not added again, and re-saving the same
+   analysis must leave the hub with one link, not two. An analysis without its hub answers "what
+   did I think that day" while "what do I think now" silently has nowhere to
+   live — this is the step the first real run skipped.
+6. **Images: a vault note SHOWS the chart.** This surface is the opposite of
+   a chat reply, and the two must not be confused. Obsidian renders local
+   images, so an archived chart is EMBEDDED in the body with `![[附件/...]]`,
+   at the reason it supports, with a readable text link underneath it to the
+   product's latest analysis for that symbol/timeframe/method. ONE ANALYSIS
+   MAY HOLD SEVERAL CHARTS -- one per method it ran -- and each sits in the
+   section it belongs to: the VCP chart under the VCP reasoning, the TD9
+   chart under the TD9 reasoning. Do not pool them at the end under `## 链接`;
+   that section is for links, and a picture filed there is a picture nobody
+   reads beside the sentence it proves. A note whose
+   evidence is a bare URL is a note nobody can read at a glance -- which is
+   the whole reason the vault exists.
+   **The nearest `## ` heading above an image must NAME that image's method**,
+   in either language -- `## VCP 形态`, `## TD9 序列`, `## DeMark 计数`,
+   `## 趋势`, `## 指标`. A heading that names no method (`## 结论`, `## 总结`)
+   is NOT a home for a chart, and neither is no heading at all: the checker
+   fails both closed. "Avoid the links section" was the old rule and it let
+   a TD9 chart sit anywhere that was not `## VCP`.
+   Archiving is REQUIRED, not an option: a save the user asked for owes at
+   least one real analysis chart -- archived, hash-verified, embedded, with
+   its method link directly beneath. Each image's link must match THAT
+   image: the slot's method and, when the caption names a timeframe, that
+   timeframe. A 4h chart may not carry a 1d link.
+   The two charts from `get_indicators` are the note's LEAD images: the main
+   technical chart (均线 / MACD / RSI plus the most notable readings) under
+   `## 指标` (slot `indicators`), and the trend-strength chart under `## 趋势`
+   (slot `trend`). Both go above the method sections, because they picture the
+   conclusion rather than one method's internals. Their method links are the
+   `indicators` and `trend` tabs, where the product shows the same readings.
+   The slot names the method, from a closed set -- `levels, vcp, chan, td9,
+   wyckoff, fib, trend, indicators` -- and the file is `附件/<id>-<slot>.png`.
+   A slot outside that set (`main`, anything new) has no implied method, so
+   it must be bound explicitly with `primary_method: <tab>` in front matter;
+   unbound, the save fails rather than accepting any tab at all.
+   When the evidence chain genuinely cannot close -- the live chart draws a
+   bar later than the note's `as_of`, or no logged-in browser is available --
+   the note is still written, with the 未归档 marker and what is missing, but
+   it is a DEGRADED record and must be reported as **未完整保存**. Do not
+   tell the user the analysis is in Obsidian; tell them what is missing and
+   what would complete it.
+   Live chart URLs still go under `## 链接` as `liveUrl` lines, because they
+   open TODAY's data and are not the frozen evidence.
+7. **Run the postcondition and fix before finishing.** One save's artefacts
+   must exist and agree: the analysis front matter, the hub page, the hub's
+   link back to the analysis, and the image contract's ACTIVE arm --
+   `image_archived: true` means every declared attachment exists with a
+   matching SHA-256; `image_archived: false` means no attachment is owed,
+   but the body must state the gap with the marker **未归档** rather than
+   imply it. No section title may appear twice in one note. RUN the checker that
+   ships WITH this skill -- `scripts/vault_check.py` inside the skill's own
+   directory: `python3 <skill-dir>/scripts/vault_check.py <vault-path>`. Do
+   not improvise a substitute check; the first Codex run did, declared PASS,
+   and missed a guessed link the real checker refuses. If any part fails,
+   report **"未完整保存"** and say which part -- never tell the user the
+   analysis is in Obsidian when it half is.
+
+## `方法/` — the methodology, synced to the release that wrote it
+
+`方法/<TOPIC>.md` mirrors the INSTALLED release. `方法/历史/<TOPIC>-<version>.md`
+holds a definition that has since been replaced, so an analysis carrying
+`skill_version: 0.1.12` can still be read against what that release meant by
+"VCP". Both halves are needed: without the mirror the vault drifts, and
+without the history an upgrade silently rewrites what every old analysis was
+citing.
+
+Do not perform this by hand. Two scripts ship with this skill:
+
+```
+python3 <skill-dir>/scripts/sync_methodology.py <vault> --needed <version>
+```
+
+prints the topics that are missing or stale. Call `get_methodology(topic=…)`
+for exactly those, write the returned texts VERBATIM into a JSON file keyed
+by topic, then:
+
+```
+python3 <skill-dir>/scripts/sync_methodology.py <vault> <version> fetched.json
+```
+
+The script decides everything that matters: an unchanged definition has its
+version bumped with no snapshot, because a snapshot per release regardless of
+content fills the vault with identical files and makes "did the methodology
+change?" unanswerable by looking. A changed definition is snapshotted under
+the release it belonged to BEFORE being replaced, and a snapshot is never
+rewritten.
+
+Store what the tool RETURNED, verbatim. Do not paraphrase, summarise or
+"improve" it: analyses cite these notes as the definition they used, and an
+edited definition makes every citation to it false.
+
+The check ships with this skill and reads its own release, so "is the
+methodology current?" is answerable without a network call.
+
+## What goes in the front matter
+
+Machine-readable fields carry the review queries, so they must be facts, not prose:
+
+```yaml
+analysis_id, symbol, asset_class, market, timeframe
+as_of          # the last CLOSED bar the analysis is about
+date           # when the note was written
+provider, route, data_digest    # which data this rests on
+methods, bias, confidence, key_levels, invalidation
+outcome        # left null; filled at review time
+image_archived, image_sha256
+data_staleness_days             # as_of vs today, when the series lags
+```
+
+Distinguish "not computable" from neutral here as strictly as in the chat answer. A null is honest; a zero is a claim.
+
+## Tags are a controlled vocabulary
+
+Read the vault's own `标签.md` and use only the tags it lists. Free-form tags are worthless a year later, because the same idea gets five spellings and no query returns a complete set.
+
+- **Fact tags** (market, region, data source) are derived by you from the instrument, never typed by hand — a derived tag cannot be missing or misspelled.
+- **Judgement tags** (direction, method, outcome) come from the analysis, and `结果/*` only at review time.
+- Keep the two kinds separate. "All US equities" is a fact; "all the ones I was long" is a judgement, and mixing them in one namespace makes both unfilterable.
+
+If the analysis needs a tag the vocabulary lacks, propose adding it to `标签.md` rather than inventing one in a note.
+
+## How the body opens
+
+**The first block is the conclusion, not the facts.** A reader opening an
+analysis is answering "what do you think", not "what happened"; the facts
+support the conclusion, so they come after it.
+
+**Straight after the H1 comes a coloured conclusion callout**, in a fixed
+shape:
+
+```markdown
+# BTC/USDT · 1d · 截至 2026-09-07
+
+> [!success] 买入 · BTC/USDT · 1d · 2026-09-08 14:30
+> 站上 76,257 的三买确认后顺势跟进，止损 74,100，目标 81,500。
+```
+
+- **The callout type comes from the view, and that is where the colour comes
+  from**: 买入 → `[!success]` (green), 卖出 → `[!danger]` (red), 中性/观望 →
+  `[!note]` (blue). Obsidian colours callouts in both live preview and reading
+  view, which raw `<span style>` does not do reliably -- Markdown has no colour
+  syntax, so do not hand-roll HTML for it.
+- First line: view, symbol, timeframe, date and time. Second line: the one-line
+  conclusion, readable on its own -- a direction plus a trigger, an
+  invalidation or a target. Never "see below".
+- The view is one of exactly three words -- 买入 / 卖出 / 中性 -- matching
+  `bias`. An invented phrase like "cautiously bullish" cannot be sorted or
+  filtered.
+
+**`## 当时的事实` comes after the conclusion.** The order is conclusion →
+reasoning → facts → levels → invalidation.
+
+## Two things the conclusion must carry
+
+**Trend strength and indicator resonance belong in the conclusion paragraph**,
+not buried further down: they are the two fastest answers to "why this view".
+Take the resonance from `get_indicators` -- it reports, per category (trend,
+momentum, volatility, volume, patterns, support/resistance), how many
+indicators are bullish and bearish and which ones are actually taking a side.
+State the view, then one line of resonance and trend, and only then open up
+the individual methods.
+
+## When not to write about a method
+
+**A method with no clear reading is left out — all of them, not just
+Wyckoff.** A paragraph written in that condition reads as a judgement when it
+is a default, and the reader cannot tell the two apart. Omitting it costs the
+analysis nothing; writing it anyway costs the reader their trust in the rest.
+
+Do not write the omission either. "缠论无明显结论" is a sentence that looks
+like a finding and is not one; leave the section out. The exception is a
+direct question about that method — then say in one clause that it has no
+clear reading, and why.
+
+Each engine declares its own version of "nothing to say":
+
+- **Wyckoff** — the side is decided only by the direction of the leg before
+  the range, and it **cannot separate distribution from re-accumulation in an
+  uptrend**; a range with `tr.quality < 0.5` is not tradeable; an unconfirmed
+  event is not a signal.
+- **VCP** — `nearMissReason` is the engine saying no VCP was found, so there
+  is no pattern to write about; a stage on its own is one clause, not a
+  section. When `unavailable` lists missing inputs the score came from fewer
+  factors and must not be presented beside a complete one.
+- **Chan** — a 笔 with `sureness: "MAYBE"` is unconfirmed and may not be used
+  as fact; with no 买卖点 and an open 中枢 there is no conclusion to state. The
+  divergence threshold is a cutoff on a continuous quantity, so a borderline
+  `ratio` is not a finding.
+- **TD9** — a count still in progress is not a signal. `nextBarNeeds` says
+  what the next close must do; until then the maturity is the fact, not a
+  direction.
+- **Fibonacci rhythm** — exploratory. It may not be counted as strong
+  resonance evidence or used alone for entry.
+
+## Charts
+
+**Two surfaces, two rules, decided by surface and not by habit.**
+
+- **A vault note embeds only the LOCAL archived file**:
+  `![[附件/<analysis_id>-<slot>.png]]`, downloaded, hash-checked and saved as
+  described below. Never embed a remote URL in a note, neither the chart URL
+  nor the snapshot URL: a remote image is a live fetch, not a record.
+- **A chat reply never embeds a chart**, whatever the client can render.
+  Charts there are named text links, as [chart links](chart-links.md) says;
+  this file does not change that rule.
+
+Applying the chat rule to a note produces a wall of URLs; embedding in chat,
+or embedding a remote URL in a note, puts something other than the archived
+evidence where the evidence is claimed to be.
+
+**What Obsidian archives is the LIGHT chart.** The product mints charts light
+by default (`theme=light`) because a note is a white page, and a dark chart
+embedded in one looks broken. Dark has to be asked for, and archiving is not
+the place to ask.
+
+Archive the chart the analysis actually rests on, using the product's own screenshot action from a logged-in browser. Save it as `附件/<analysis_id>-<slot>.png`, embed it with `![[附件/...]]`, and record its SHA-256. **`image_archived` is a required field and must be exactly `true` or `false`** — deleting it does not exempt a note from the image contract, it reports 未完整保存. **Put each embed on its OWN line**, with its own link beneath it: two images on one line cannot each have a link directly under them, and each is still checked separately. **Every image the body embeds must be declared in `image_sha256s` under its own slot** — the declaration is what binds those bytes to this note, so an embed nobody declared is a picture with no provenance and fails. It must also be this analysis's own file: the name starts with this note's `analysis_id`, never another note's.
+
+Under every archived image, add one readable text link to the product's LATEST analysis for the same symbol, timeframe and method — `[查看 ETH/USDT 的最新 VCP 分析](...)` — so the frozen record and the living view are one click apart. This is the method-page URL, not the chart URL; its contract is LIVE and exact: `https://tradingsignal.pro/app?market=<market>&symbol=<url-encoded symbol>&timeframe=<tf>&tab=<tab>`, where `tab` is one of `indicators, levels, trend, fib, chan, td9, vcp, wyckoff` and the method decides it (VCP → `vcp`, TD/DeMark → `td9`, Chan → `chan`, Wyckoff → `wyckoff`, support/resistance → `levels`). A link missing any of symbol, timeframe or tab is not a deep link, it is a guess. `market` may be left out, because the app derives it from the symbol; a link that does carry it must carry the right one. Complete-but-wrong is worse: the checker also requires the link to open THIS note's instrument -- same symbol, same market, and the note's own decision timeframe or one it declares in `context_timeframes` -- and requires the tab to be the method the link TEXT promises and a method this analysis actually ran. A link that passes a shape check and shows the reader a different chart is the failure this exists to prevent.
+
+**Do not archive a chart that shows something the note does not claim.** If the live chart draws a bar later than the note's `as_of` — a forming bar, or a series that has refreshed since — the image contradicts the note in the one position that claims to be its evidence. Say so and leave the image unarchived.
+
+Be exact about what an image proves. A screenshot proves the symbol and timeframe only if the picture itself is titled with them. It does not prove its own date; that comes from `data_digest`, from the store holding no later bar at archive time, and from the filename matching `analysis_id`. State that chain rather than letting the PNG stand in for it.
+
+## Links
+
+- `liveUrl` — a shareable link to the chart. It opens **today's** data, not the day the analysis was written. Label it that way. Never describe it as returning to that day's chart.
+- `snapshotUrl` — a link that replays the day. Write "暂无" until the product actually has one.
+
+## Review
+
+To review, read the vault rather than re-deriving from memory:
+
+1. Query `分析/` by tag and front matter for the question asked ("everything I was long that has not played out", "every Fibonacci call that reached 0.618"). Keep a plain-Markdown history link on every symbol page — Dataview is an optional enhancement, and a vault without the plugin must still show its history.
+2. For each hit, fetch what the instrument did **after** `as_of`, and compare it against the note's own `invalidation` — not against a target chosen afterwards.
+3. Fill `outcome` and the review section of that note, and add the `结果/*` tag. Leave the original conclusion and reasoning untouched: a record edited to match the outcome cannot be reviewed again.
+4. Report the pattern across notes, not just the last one, and say plainly when the sample is too small to support one.
